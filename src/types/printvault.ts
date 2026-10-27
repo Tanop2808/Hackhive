@@ -7,9 +7,13 @@ export type ScreenType =
   | 'receipts_list'
   | 'profile'
   | 'auth'
-  | 'chat';
+  | 'chat'
+  | 'shopkeeper_auth'
+  | 'shopkeeper_dashboard';
 
 export type ViewMode = 'auto' | 'mobile' | 'desktop';
+
+export type AppRole = 'customer' | 'shopkeeper';
 
 export interface Customer {
   id: string;
@@ -18,6 +22,21 @@ export interface Customer {
   email: string;
   avatarUrl?: string;
   vaultTier?: string;
+}
+
+export interface Shopkeeper {
+  id: string;
+  shopId: string;
+  shopName: string;
+  operatorName: string;
+  email: string;
+  phone?: string;
+  printerModel?: string;
+  location: string;
+  avatarUrl?: string;
+  isOnline: boolean;
+  todayJobsCount?: number;
+  todayEarnings?: number;
 }
 
 export type JobStatus =

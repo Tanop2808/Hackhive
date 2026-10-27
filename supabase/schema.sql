@@ -304,4 +304,50 @@ on public.chat_messages for select using (true);
 create policy "Allow public insert chat messages"
 on public.chat_messages for insert with check (true);
 
+-- ------------------------------------------------------------------------------
+-- 9. Shopkeepers & Xerox Operators Table (Shop Name, Operator Name, Email, Password, Printer Model)
+-- ------------------------------------------------------------------------------
+create table if not exists public.shopkeepers (
+    id uuid primary key default gen_random_uuid(),
+    shop_id text not null,
+    shop_name text not null,
+    operator_name text not null,
+    email text not null unique,
+    password_hash text not null,
+    phone text default '+91 98450 12345',
+    printer_model text default 'Canon imageRUNNER ADVANCE C5560i',
+    location text default 'Station Road, MG Road, Bengaluru',
+    avatar_url text default 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=300&q=80',
+    is_online boolean default true,
+    created_at timestamptz default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_shopkeepers_email on public.shopkeepers(email);
+
+alter table public.shopkeepers enable row level security;
+
+create policy "Allow public read shopkeepers"
+on public.shopkeepers for select using (true);
+
+create policy "Allow public insert shopkeepers"
+on public.shopkeepers for insert with check (true);
+
+create policy "Allow public update shopkeepers"
+on public.shopkeepers for update using (true);
+
+-- Seed initial shopkeeper (Mohan Kumar - QuickPrint Corner)
+insert into public.shopkeepers (id, shop_id, shop_name, operator_name, email, password_hash, printer_model, location)
+values (
+    'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e',
+    'shop-1',
+    'QuickPrint Corner & Xerox',
+    'Mohan Kumar',
+    'mohan.quickprint@domain.in',
+    'vault123',
+    'Canon imageRUNNER ADVANCE C5560i',
+    'Station Road, MG Road, Bengaluru'
+)
+on conflict (email) do nothing;
+
+
 

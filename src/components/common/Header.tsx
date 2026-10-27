@@ -65,8 +65,32 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* User Profile / Auth Avatar */}
+          {/* Role Switcher & User Profile */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (currentScreen === 'shopkeeper_auth' || currentScreen === 'shopkeeper_dashboard') {
+                  setCurrentScreen('home');
+                } else {
+                  setCurrentScreen('shopkeeper_auth');
+                }
+              }}
+              type="button"
+              className="px-2.5 py-1 rounded-full bg-[#f5f3ef] hover:bg-[#efeeea] border border-[#ece8e1] text-[#07006c] font-sans text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer"
+              title="Switch to Xerox Shopkeeper Terminal"
+            >
+              <span className="material-symbols-outlined text-[15px]">
+                {currentScreen === 'shopkeeper_auth' || currentScreen === 'shopkeeper_dashboard'
+                  ? 'person'
+                  : 'storefront'}
+              </span>
+              <span className="hidden xs:inline">
+                {currentScreen === 'shopkeeper_auth' || currentScreen === 'shopkeeper_dashboard'
+                  ? 'Customer'
+                  : 'Shopkeeper'}
+              </span>
+            </button>
+
             {currentUser ? (
               <button
                 onClick={() => setCurrentScreen('profile')}
@@ -87,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <button
                 onClick={() => setCurrentScreen('auth')}
-                className="px-3 py-1.5 rounded-full bg-[#3d3bf3] text-white text-[12px] font-sans font-semibold hover:bg-[#2e2cd4] transition-all shadow-xs"
+                className="px-3 py-1.5 rounded-full bg-[#3d3bf3] text-white text-[12px] font-sans font-semibold hover:bg-[#2e2cd4] transition-all shadow-xs cursor-pointer"
                 type="button"
               >
                 Sign In

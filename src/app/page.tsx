@@ -15,6 +15,8 @@ import { ReceiptsListScreen } from '@/components/screens/ReceiptsListScreen';
 import { ProfileScreen } from '@/components/screens/ProfileScreen';
 import { AuthScreen } from '@/components/screens/AuthScreen';
 import { ChatScreen } from '@/components/screens/ChatScreen';
+import { ShopkeeperAuthScreen } from '@/components/screens/ShopkeeperAuthScreen';
+import { ShopkeeperDashboardScreen } from '@/components/screens/ShopkeeperDashboardScreen';
 import { DesktopWebLayout } from '@/components/desktop/DesktopWebLayout';
 
 function MobileAppFrame() {
@@ -77,6 +79,20 @@ function MobileAppFrame() {
           showBack: true,
           onBack: () => setCurrentScreen('home'),
         };
+      case 'shopkeeper_auth':
+        return {
+          title: 'PrintVault',
+          subtitle: 'Operator Gateway',
+          showBack: true,
+          onBack: () => setCurrentScreen('home'),
+        };
+      case 'shopkeeper_dashboard':
+        return {
+          title: 'PrintVault',
+          subtitle: 'Kiosk Terminal',
+          showBack: true,
+          onBack: () => setCurrentScreen('home'),
+        };
       default:
         return { title: 'PrintVault', showBack: false };
     }
@@ -88,6 +104,10 @@ function MobileAppFrame() {
         return <HomeScreen />;
       case 'auth':
         return <AuthScreen />;
+      case 'shopkeeper_auth':
+        return <ShopkeeperAuthScreen />;
+      case 'shopkeeper_dashboard':
+        return <ShopkeeperDashboardScreen />;
       case 'chat':
         return <ChatScreen />;
       case 'new_job':

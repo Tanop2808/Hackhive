@@ -12,6 +12,8 @@ import { ReceiptsListScreen } from '@/components/screens/ReceiptsListScreen';
 import { ProfileScreen } from '@/components/screens/ProfileScreen';
 import { AuthScreen } from '@/components/screens/AuthScreen';
 import { ChatScreen } from '@/components/screens/ChatScreen';
+import { ShopkeeperAuthScreen } from '@/components/screens/ShopkeeperAuthScreen';
+import { ShopkeeperDashboardScreen } from '@/components/screens/ShopkeeperDashboardScreen';
 
 export const DesktopWebLayout: React.FC = () => {
   const {
@@ -33,6 +35,7 @@ export const DesktopWebLayout: React.FC = () => {
     { id: 'live_tracker', label: 'Live Tracker', icon: 'sensors' },
     { id: 'receipts_list', label: 'Purge Receipts', icon: 'receipt_long' },
     { id: 'profile', label: 'Hardware Enclave', icon: 'security' },
+    { id: 'shopkeeper_dashboard', label: 'Shopkeeper Kiosk', icon: 'storefront' },
     { id: 'auth', label: currentUser ? 'Customer Access' : 'Sign In', icon: 'account_circle' },
   ];
 
@@ -97,6 +100,25 @@ export const DesktopWebLayout: React.FC = () => {
               <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
               <span>Enclave Tier 4 Active</span>
             </div>
+
+            <button
+              onClick={() => {
+                if (currentScreen === 'shopkeeper_auth' || currentScreen === 'shopkeeper_dashboard') {
+                  setCurrentScreen('home');
+                } else {
+                  setCurrentScreen('shopkeeper_dashboard');
+                }
+              }}
+              type="button"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#07006c] hover:bg-[#12009e] text-white font-sans text-[12px] font-semibold shadow-xs transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">storefront</span>
+              <span>
+                {currentScreen === 'shopkeeper_dashboard' || currentScreen === 'shopkeeper_auth'
+                  ? 'Customer Mode'
+                  : 'Shopkeeper Kiosk'}
+              </span>
+            </button>
 
             {currentUser ? (
               <button
@@ -331,6 +353,8 @@ export const DesktopWebLayout: React.FC = () => {
             {/* Screen switcher */}
             {currentScreen === 'home' && <HomeScreen />}
             {currentScreen === 'auth' && <AuthScreen />}
+            {currentScreen === 'shopkeeper_auth' && <ShopkeeperAuthScreen />}
+            {currentScreen === 'shopkeeper_dashboard' && <ShopkeeperDashboardScreen />}
             {currentScreen === 'chat' && <ChatScreen />}
             {currentScreen === 'new_job' && <NewPrintJobScreen />}
             {currentScreen === 'shop_qr' && <ShopLinkQrScreen />}

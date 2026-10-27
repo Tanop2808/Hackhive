@@ -58,6 +58,21 @@ interface PrintVaultContextType {
     isMaskedAadhaar: boolean;
     note?: string;
   }) => void;
+
+  // App Role & Shopkeeper Terminal
+  appRole: import('@/types/printvault').AppRole;
+  setAppRole: (role: import('@/types/printvault').AppRole) => void;
+  currentShopkeeper: import('@/types/printvault').Shopkeeper | null;
+  shopkeeperSignIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  shopkeeperSignUp: (data: {
+    shopName: string;
+    operatorName: string;
+    email: string;
+    password: string;
+    printerModel?: string;
+    location?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  shopkeeperSignOut: () => void;
 }
 
 const PrintVaultContext = createContext<PrintVaultContextType | undefined>(undefined);
@@ -65,6 +80,20 @@ const PrintVaultContext = createContext<PrintVaultContextType | undefined>(undef
 export function PrintVaultProvider({ children }: { children: React.ReactNode }) {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('home');
   const [viewMode, setViewMode] = useState<ViewMode>('auto');
+  const [appRole, setAppRole] = useState<import('@/types/printvault').AppRole>('customer');
+  const [currentShopkeeper, setCurrentShopkeeper] = useState<import('@/types/printvault').Shopkeeper | null>({
+    id: 'b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e',
+    shopId: 'shop-1',
+    shopName: 'QuickPrint Corner & Xerox',
+    operatorName: 'Mohan Kumar',
+    email: 'mohan.quickprint@domain.in',
+    printerModel: 'Canon imageRUNNER ADVANCE C5560i',
+    location: 'Station Road, MG Road, Bengaluru',
+    avatarUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=300&q=80',
+    isOnline: true,
+    todayJobsCount: 42,
+    todayEarnings: 1280,
+  });
   const [currentUser, setCurrentUser] = useState<Customer | null>({
     id: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
     name: userProfile.name,
@@ -569,6 +598,63 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
     triggerToast(`Document sent to ${shop.name} printer`);
   };
 
+  const shopkeeperSignIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/auth/shopkeeper/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (data.success && data.shopkeeper) {
+        setCurrentShopkeeper(data.shopkeeper);
+        setAppRole('shopkeeper');
+        triggerToast(`Welcome, Operator ${data.shopkeeper.operatorName}!`);
+        setCurrentScreen('shopkeeper_dashboard');
+        return { success: true };
+      } else {
+        return { success: false, error: data.error || 'Authentication failed' };
+      }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Network connection failed' };
+    }
+  };
+
+  const shopkeeperSignUp = async (data: {
+    shopName: string;
+    operatorName: string;
+    email: string;
+    password: string;
+    printerModel?: string;
+    location?: string;
+  }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/auth/shopkeeper/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const resData = await res.json();
+      if (resData.success && resData.shopkeeper) {
+        setCurrentShopkeeper(resData.shopkeeper);
+        setAppRole('shopkeeper');
+        triggerToast(`Store registered! Welcome, ${resData.shopkeeper.operatorName}`);
+        setCurrentScreen('shopkeeper_dashboard');
+        return { success: true };
+      } else {
+        return { success: false, error: resData.error || 'Registration failed' };
+      }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Network connection failed' };
+    }
+  };
+
+  const shopkeeperSignOut = () => {
+    setCurrentShopkeeper(null);
+    triggerToast('Signed out of Xerox Kiosk Terminal.');
+    setCurrentScreen('shopkeeper_auth');
+  };
+
   return (
     <PrintVaultContext.Provider
       value={{
@@ -605,6 +691,12 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
         declineChatRequest,
         sendChatMessage,
         sendDocumentInChat,
+        appRole,
+        setAppRole,
+        currentShopkeeper,
+        shopkeeperSignIn,
+        shopkeeperSignUp,
+        shopkeeperSignOut,
       }}
     >
       {children}
