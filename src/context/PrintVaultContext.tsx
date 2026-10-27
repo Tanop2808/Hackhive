@@ -64,7 +64,7 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
     }, 2500);
   };
 
-  const createNewJob = (jobData: {
+  const createNewJob = async (jobData: {
     fileName: string;
     fileSize: string;
     pageCount: number;
@@ -101,10 +101,31 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
     setCountdown(600);
     setCurrentScreen('shop_qr');
     triggerToast('Secure Print Token Generated');
+
+    // Async persist to Backend API / Supabase
+    try {
+      await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: newJob.fileName,
+          fileSize: newJob.fileSize,
+          pageCount: newJob.pageCount,
+          copies: newJob.copies,
+          colorMode: newJob.colorMode,
+          shopId: newJob.shop.id,
+          isMaskedAadhaar: newJob.isMaskedAadhaar,
+          shop: newJob.shop,
+        }),
+      });
+    } catch {
+      // Ignored: optimistic UI already applied
+    }
   };
 
-  const revokeActiveJob = () => {
+  const revokeActiveJob = async () => {
     if (!activeJob) return;
+    const jobId = activeJob.id;
     const revokedItem: RecentPrintItem = {
       id: `rev-${Date.now()}`,
       fileName: activeJob.fileName,
@@ -118,10 +139,20 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
     setActiveJob(null);
     triggerToast('Access Revoked. Volatile buffer purged.');
     setCurrentScreen('home');
+
+    // Trigger backend revocation & purge receipt creation
+    try {
+      await fetch(`/api/jobs/${encodeURIComponent(jobId)}/revoke`, {
+        method: 'POST',
+      });
+    } catch {
+      // Handled optimistically
+    }
   };
 
-  const completeAndPurgeActiveJob = () => {
+  const completeAndPurgeActiveJob = async () => {
     if (!activeJob) return;
+    const jobId = activeJob.id;
     const completedItem: RecentPrintItem = {
       id: `done-${Date.now()}`,
       fileName: activeJob.fileName,
@@ -138,6 +169,15 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
     setRecentPrints((prev) => [completedItem, ...prev]);
     setActiveJob(null);
     setCurrentScreen('receipt');
+
+    // Trigger backend DoD shred & verified purge receipt
+    try {
+      await fetch(`/api/jobs/${encodeURIComponent(jobId)}/purge`, {
+        method: 'POST',
+      });
+    } catch {
+      // Handled optimistically
+    }
   };
 
   const viewReceipt = (item?: PrintJob | RecentPrintItem) => {
