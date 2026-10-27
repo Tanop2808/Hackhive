@@ -17,7 +17,6 @@ import { ChatScreen } from '@/components/screens/ChatScreen';
 import { ShopkeeperAuthScreen } from '@/components/screens/ShopkeeperAuthScreen';
 import { ShopkeeperDashboardScreen } from '@/components/screens/ShopkeeperDashboardScreen';
 import { DesktopWebLayout } from '@/components/desktop/DesktopWebLayout';
-import { ViewModeSwitcher } from '@/components/common/ViewModeSwitcher';
 
 function MobileAppFrame() {
   const { currentScreen, setCurrentScreen } = usePrintVault();
@@ -153,9 +152,6 @@ function MainAppShell() {
     <>
       {/* Global Floating Toast */}
       <Toast />
-
-      {/* Floating Viewport Mode Switcher */}
-      <ViewModeSwitcher />
 
       {/* Render based on view mode */}
       {viewMode === 'desktop' ? (
