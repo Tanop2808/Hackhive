@@ -22,16 +22,10 @@ export const BottomNav: React.FC = () => {
       isActive: currentScreen === 'home',
     },
     {
-      id: 'live_tracker' as ScreenType,
-      label: 'Jobs',
-      icon: 'inventory_2',
-      isActive: currentScreen === 'live_tracker' || currentScreen === 'shop_qr',
-    },
-    {
-      id: 'receipts_list' as ScreenType,
-      label: 'Receipts',
-      icon: 'receipt_long',
-      isActive: currentScreen === 'receipt' || currentScreen === 'receipts_list',
+      id: 'chat' as ScreenType,
+      label: 'Xerox Chat',
+      icon: 'chat',
+      isActive: currentScreen === 'chat',
     },
     {
       id: 'profile' as ScreenType,

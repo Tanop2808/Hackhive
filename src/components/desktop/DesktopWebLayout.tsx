@@ -31,9 +31,7 @@ export const DesktopWebLayout: React.FC = () => {
 
   const navLinks = [
     { id: 'home', label: 'Terminal Overview', icon: 'dashboard' },
-    { id: 'new_job', label: 'New Secure Print', icon: 'add_circle' },
-    { id: 'live_tracker', label: 'Live Tracker', icon: 'sensors' },
-    { id: 'receipts_list', label: 'Purge Receipts', icon: 'receipt_long' },
+    { id: 'chat', label: 'Xerox Chat', icon: 'chat' },
     { id: 'profile', label: 'Hardware Enclave', icon: 'security' },
     { id: 'shopkeeper_dashboard', label: 'Shopkeeper Kiosk', icon: 'storefront' },
     { id: 'auth', label: currentUser ? 'Customer Access' : 'Sign In', icon: 'account_circle' },
@@ -67,10 +65,7 @@ export const DesktopWebLayout: React.FC = () => {
           {/* Desktop Nav Items */}
           <nav className="hidden md:flex items-center gap-1 bg-[#efeeea]/70 p-1.5 rounded-full border border-[#ece8e1]">
             {navLinks.map((item) => {
-              const isActive =
-                currentScreen === item.id ||
-                (item.id === 'receipts_list' && currentScreen === 'receipt') ||
-                (item.id === 'live_tracker' && currentScreen === 'shop_qr');
+              const isActive = currentScreen === item.id;
               return (
                 <button
                   key={item.id}
@@ -274,30 +269,14 @@ export const DesktopWebLayout: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setCurrentScreen('new_job')}
+              onClick={() => setCurrentScreen('chat')}
               className="w-full py-2.5 px-4 rounded-2xl bg-[#3d3bf3] text-white font-sans text-[13px] font-semibold flex items-center justify-between shadow-xs hover:bg-[#2e2cd4] transition-all"
             >
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                <span>New Print Pipeline</span>
+                <span className="material-symbols-outlined text-[18px]">chat</span>
+                <span>Active Xerox Chat</span>
               </div>
               <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setCurrentScreen('receipts_list')}
-              className="w-full py-2.5 px-4 rounded-2xl bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] font-sans text-[13px] font-medium flex items-center justify-between transition-all"
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-[#454556]">
-                  receipt_long
-                </span>
-                <span>Purge Receipts</span>
-              </div>
-              <span className="font-mono text-[11px] text-[#454556]">
-                {recentPrints.length}
-              </span>
             </button>
 
             <button
@@ -421,46 +400,30 @@ export const DesktopWebLayout: React.FC = () => {
             </div>
           </div>
 
-          {/* Real-time Purge Receipts Stream */}
+          {/* Real-time Ephemeral Security Enclave Monitor */}
           <div className="bg-white rounded-3xl p-5 border border-[#ece8e1] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-heading font-semibold text-[14px] text-[#1b1c1a]">
-                Purge Receipts Log
+                Hardware Enclave Monitor
               </h4>
-              <button
-                type="button"
-                onClick={() => setCurrentScreen('receipts_list')}
-                className="font-sans text-[12px] text-[#3d3bf3] hover:underline font-medium"
-              >
-                View all
-              </button>
+              <span className="font-mono text-[10px] text-emerald-800 bg-[#ddf5e6] px-2 py-0.5 rounded-full font-semibold">
+                Online
+              </span>
             </div>
 
-            <div className="space-y-2">
-              {recentPrints.slice(0, 3).map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => viewReceipt(item)}
-                  className="p-2.5 rounded-xl bg-[#fbf9f5] hover:bg-[#f5f3ef] border border-[#ece8e1] transition-all cursor-pointer flex items-center justify-between gap-2"
-                >
-                  <div className="min-w-0 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[17px] text-[#3d3bf3] shrink-0">
-                      verified
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-sans text-[12px] font-semibold text-[#1b1c1a] truncate">
-                        {item.fileName}
-                      </p>
-                      <p className="font-sans text-[10px] text-[#454556] truncate">
-                        {item.shopName} • {item.timestamp}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="font-mono text-[10px] font-semibold px-2 py-0.5 bg-[#ddf5e6] text-[#0a542a] rounded shrink-0">
-                    Purged
-                  </span>
-                </div>
-              ))}
+            <div className="space-y-2.5 text-[11px]">
+              <div className="p-3 bg-[#fbf9f5] rounded-2xl border border-[#ece8e1] flex items-center justify-between">
+                <span className="text-[#454556]">RAM Auto-Shred</span>
+                <span className="font-mono font-semibold text-[#1b1c1a]">DoD 5220.22-M</span>
+              </div>
+              <div className="p-3 bg-[#fbf9f5] rounded-2xl border border-[#ece8e1] flex items-center justify-between">
+                <span className="text-[#454556]">Aadhaar Masking</span>
+                <span className="font-mono font-semibold text-[#1b1c1a]">On-Device WASM</span>
+              </div>
+              <div className="p-3 bg-[#fbf9f5] rounded-2xl border border-[#ece8e1] flex items-center justify-between">
+                <span className="text-[#454556]">Persistence</span>
+                <span className="font-mono font-semibold text-emerald-700">0 Bytes Retained</span>
+              </div>
             </div>
           </div>
         </aside>
