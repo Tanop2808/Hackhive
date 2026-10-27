@@ -61,13 +61,13 @@ export const AuthScreen: React.FC = () => {
         <div className="w-14 h-14 rounded-3xl bg-[#3d3bf3] flex items-center justify-center text-white mx-auto mb-3 shadow-lg shadow-[#3d3bf3]/25">
           <span className="material-symbols-outlined text-[30px]">shield_lock</span>
         </div>
-        <h2 className="font-heading font-bold text-[24px] text-[#1b1c1a] tracking-tight">
-          {mode === 'signin' ? 'Welcome to PrintVault' : 'Create Customer Account'}
+        <h2 className="font-heading font-semibold text-[22px] text-[#1b1c1a] tracking-tight">
+          {mode === 'signin' ? 'Welcome back' : 'Create an account'}
         </h2>
-        <p className="font-sans text-[13px] text-[#454556] mt-1 max-w-[300px] mx-auto">
+        <p className="font-sans text-[13px] text-[#6b6760] mt-1 max-w-[300px] mx-auto">
           {mode === 'signin'
-            ? 'Sign in to access your hardware-sealed document pipeline'
-            : 'Register your customer credentials for zero-store ephemeral printing'}
+            ? 'Sign in to send and manage your print jobs'
+            : 'Sign up to print documents at local Xerox shops'}
         </p>
       </div>
 
@@ -226,12 +226,12 @@ export const AuthScreen: React.FC = () => {
           ) : mode === 'signin' ? (
             <>
               <span className="material-symbols-outlined text-[20px]">login</span>
-              <span>Sign In to Vault</span>
+              <span>Sign In</span>
             </>
           ) : (
             <>
               <span className="material-symbols-outlined text-[20px]">person_add</span>
-              <span>Create Customer Account</span>
+              <span>Create Account</span>
             </>
           )}
         </button>
@@ -245,19 +245,19 @@ export const AuthScreen: React.FC = () => {
               className="text-[#3d3bf3] font-sans text-[12px] font-medium hover:underline inline-flex items-center gap-1 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[15px]">bolt</span>
-              <span>Autofill demo account (Tanishq Mudaliyar)</span>
+              <span>Autofill demo (Tanishq Mudaliyar)</span>
             </button>
           </div>
         )}
       </form>
 
       {/* Security Footnote */}
-      <div className="mt-6 p-4 rounded-2xl bg-[#ddf5e6]/60 border border-[#b2e5c5] flex items-start gap-3">
-        <span className="material-symbols-outlined text-[18px] text-[#0a542a] shrink-0 mt-0.5">
+      <div className="mt-6 p-3.5 rounded-2xl bg-[#ddf5e6]/60 border border-[#b2e5c5] flex items-start gap-2.5">
+        <span className="material-symbols-outlined text-[17px] text-[#0a542a] shrink-0 mt-0.5">
           verified_user
         </span>
         <p className="font-sans text-[11px] text-[#0a542a] leading-relaxed">
-          Customer credentials are bound to your client-side hardware security enclave. Documents are rendered ephemerally without persistent cloud storage.
+          Your documents and credentials are encrypted. Files are automatically erased from printers after printing.
         </p>
       </div>
     </div>

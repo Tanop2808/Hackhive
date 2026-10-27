@@ -30,9 +30,9 @@ export const NearbyXeroxMap: React.FC = () => {
       {/* Top Map Control Bar */}
       <div className="bg-white px-4 py-3 border-b border-[#ece8e1] flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-          <span className="font-mono text-[11px] font-semibold text-[#1b1c1a] tracking-tight">
-            Live Xerox GPS Radar (1km Radius)
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+          <span className="font-sans text-[12px] font-semibold text-[#1b1c1a] tracking-tight">
+            Nearby Shops (within 1 km)
           </span>
         </div>
 
@@ -102,7 +102,7 @@ export const NearbyXeroxMap: React.FC = () => {
               : 'bg-[#efeeea] text-[#454556] hover:text-[#1b1c1a]'
           }`}
         >
-          ⚡ Fast Queue Laser
+          ⚡ Quick Print
         </button>
       </div>
 
@@ -322,10 +322,10 @@ export const NearbyXeroxMap: React.FC = () => {
             <button
               type="button"
               onClick={() => initiateChatWithShop(selectedShop)}
-              className="px-4 py-2.5 rounded-xl bg-[#3d3bf3] hover:bg-[#2e2cd4] text-white font-sans text-[12px] font-semibold flex items-center gap-1.5 shrink-0 shadow-sm shadow-[#3d3bf3]/25 active:scale-95 transition-all cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-[#3d3bf3] hover:bg-[#2e2cd4] text-white font-sans text-[12px] font-semibold flex items-center gap-1.5 shrink-0 shadow-xs active:scale-95 transition-all cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[16px]">chat</span>
-              <span>Connect &amp; Chat</span>
+              <span className="material-symbols-outlined text-[15px]">chat</span>
+              <span>Chat &amp; Print</span>
             </button>
           </div>
         )}

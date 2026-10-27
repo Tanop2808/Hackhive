@@ -67,7 +67,7 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
               </div>
               <p className="font-sans text-[12px] text-white/80 mt-0.5">
-                Certified Operator: <strong className="text-white">{operatorName}</strong>
+                Operator: <strong className="text-white">{operatorName}</strong>
               </p>
             </div>
           </div>
@@ -85,10 +85,10 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
         <div className="p-3 bg-white/10 rounded-2xl border border-white/10 flex items-center justify-between text-[11px]">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[17px] text-emerald-400">print</span>
-            <span className="font-mono">{printerModel}</span>
+            <span className="font-sans font-medium">{printerModel}</span>
           </div>
-          <span className="font-mono text-emerald-300 font-bold bg-emerald-950/40 px-2 py-0.5 rounded">
-            RAM Spooler Online
+          <span className="font-sans text-emerald-300 font-semibold bg-emerald-950/40 px-2 py-0.5 rounded">
+            Printer Ready
           </span>
         </div>
 
@@ -101,8 +101,8 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
             <span className="font-mono text-[20px] font-bold text-white">42</span>
           </div>
           <div>
-            <span className="font-sans text-[10px] text-white/70 block uppercase tracking-wider">
-              Spool Earnings
+            <span className="font-sans text-[10px] text-white/70 block uppercase tracking-wide">
+              Today&apos;s Revenue
             </span>
             <span className="font-mono text-[20px] font-bold text-emerald-300">₹1,280</span>
           </div>
@@ -156,11 +156,11 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
             <div className="p-3 bg-[#fbf9f5] rounded-2xl border border-[#ece8e1] flex items-center justify-between text-[12px]">
               <div className="flex items-center gap-2 text-[#454556]">
                 <span className="material-symbols-outlined text-[17px] text-[#3d3bf3]">
-                  security
+                  near_me
                 </span>
-                <span>Encrypted Handshake Handed by Client</span>
+                <span>Customer waiting for print</span>
               </div>
-              <span className="font-mono font-semibold text-[#1b1c1a]">SEC-NODE-IND-884</span>
+              <span className="font-sans text-[11px] text-[#6b6760]">120m away</span>
             </div>
 
             {/* Accept / Decline Action Buttons */}
@@ -200,17 +200,17 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
             <h4 className="font-heading font-semibold text-[15px] text-[#1b1c1a]">
               No Incoming Requests Right Now
             </h4>
-            <p className="font-sans text-[12px] text-[#454556] max-w-[300px] mx-auto">
-              Your printer is broadcast to all nearby customers on the GPS radar. New requests will appear here instantly.
+            <p className="font-sans text-[12px] text-[#6b6760] max-w-[300px] mx-auto">
+              Your shop is visible to nearby customers. New print requests will appear here instantly.
             </p>
 
             <button
               type="button"
               onClick={simulateIncomingRequest}
-              className="mt-2 px-4 py-2 rounded-full bg-[#e1e0ff] hover:bg-[#d4d2ff] text-[#07006c] font-sans text-[12px] font-semibold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+              className="mt-2 px-4 py-2 rounded-full bg-[#e1e0ff] hover:bg-[#d4d2ff] text-[#07006c] font-sans text-[12px] font-medium transition-all inline-flex items-center gap-1.5 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[16px]">bolt</span>
-              <span>Simulate Customer Request (Tanishq Mudaliyar)</span>
+              <span>Simulate Customer Request (Tanishq)</span>
             </button>
           </div>
         )}

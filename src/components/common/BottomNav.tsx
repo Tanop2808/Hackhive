@@ -17,20 +17,20 @@ export const BottomNav: React.FC = () => {
   const navItems = [
     {
       id: 'home' as ScreenType,
-      label: 'Home',
-      icon: 'shield_with_house',
+      label: 'Shops',
+      icon: 'storefront',
       isActive: currentScreen === 'home',
     },
     {
       id: 'chat' as ScreenType,
-      label: 'Xerox Chat',
+      label: 'Chat',
       icon: 'chat',
       isActive: currentScreen === 'chat',
     },
     {
       id: 'profile' as ScreenType,
       label: 'Profile',
-      icon: 'fingerprint',
+      icon: 'person',
       isActive: currentScreen === 'profile',
     },
   ];

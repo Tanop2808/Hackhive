@@ -39,8 +39,8 @@ export const ChatScreen: React.FC = () => {
           <span className="material-symbols-outlined text-[24px]">chat_bubble_outline</span>
         </div>
         <h3 className="font-heading font-semibold text-[16px] text-[#1b1c1a]">No Active Chat</h3>
-        <p className="font-sans text-[13px] text-[#454556] mt-1 max-w-[280px]">
-          Select a nearby Xerox store from the GPS map to initiate an encrypted print session.
+        <p className="font-sans text-[13px] text-[#6b6760] mt-1 max-w-[280px]">
+          Select a nearby Xerox shop to connect with the operator and send your documents.
         </p>
         <button
           type="button"
@@ -139,13 +139,13 @@ export const ChatScreen: React.FC = () => {
         </div>
 
         {/* Customer Context Ribbon */}
-        <div className="mt-3 pt-2.5 border-t border-[#ece8e1]/70 flex items-center justify-between text-[11px] text-[#454556]">
+        <div className="mt-3 pt-2.5 border-t border-[#ece8e1] flex items-center justify-between text-[11px] text-[#6b6760]">
           <div className="flex items-center gap-1.5 truncate">
             <span className="material-symbols-outlined text-[15px] text-[#3d3bf3]">badge</span>
             <span>Customer: <strong className="text-[#1b1c1a]">{customerName}</strong></span>
           </div>
-          <span className="font-mono text-[10px] bg-[#e1e0ff] text-[#07006c] px-2 py-0.5 rounded-full font-semibold shrink-0">
-            Enclave Tier 4
+          <span className="font-sans text-[10px] bg-[#e1e0ff] text-[#07006c] px-2.5 py-0.5 rounded-full font-medium shrink-0">
+            Secure Session
           </span>
         </div>
       </div>
@@ -158,14 +158,14 @@ export const ChatScreen: React.FC = () => {
               <span className="material-symbols-outlined text-[26px] animate-spin">sync</span>
             </div>
             <div className="flex-1">
-              <span className="font-mono text-[11px] text-[#3d3bf3] font-bold uppercase tracking-wider block">
-                STEP 3: Awaiting Shopkeeper Authorization
+              <span className="font-sans text-[11px] text-[#3d3bf3] font-semibold uppercase tracking-wide block">
+                Awaiting Shopkeeper
               </span>
-              <h4 className="font-heading font-bold text-[17px] text-[#1b1c1a] mt-0.5">
-                Connection Request Dispatched
+              <h4 className="font-heading font-semibold text-[16px] text-[#1b1c1a] mt-0.5">
+                Print Request Sent
               </h4>
-              <p className="font-sans text-[13px] text-[#454556] mt-1">
-                A secure handshake request from <strong>{customerName}</strong> has been routed to <strong>{shop.name}</strong> ({operatorName}).
+              <p className="font-sans text-[13px] text-[#6b6760] mt-1">
+                Your request was sent to <strong>{operatorName}</strong> at <strong>{shop.name}</strong>. You can send documents once accepted.
               </p>
             </div>
           </div>
@@ -174,17 +174,17 @@ export const ChatScreen: React.FC = () => {
           <div className="p-4 rounded-2xl bg-[#fff8e6] border border-[#f0deab] text-[#5c4300] space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-                <span className="font-heading font-bold text-[13px]">
-                  Shopkeeper Kiosk Prompt (Operator: {operatorName})
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                <span className="font-heading font-semibold text-[13px]">
+                  Shopkeeper Request Preview ({operatorName})
                 </span>
               </div>
-              <span className="font-mono text-[10px] bg-white px-2 py-0.5 rounded border border-[#f0deab] font-semibold">
-                Incoming Xerox Request
+              <span className="font-sans text-[10px] bg-white px-2 py-0.5 rounded border border-[#f0deab] font-medium">
+                New Request
               </span>
             </div>
             <p className="font-sans text-[12px] leading-relaxed text-[#5c4300]">
-              Customer <strong>{customerName}</strong> (Client ID: {customer.id.substring(0, 8)}) is 120m away and requesting an encrypted document spooling session.
+              Customer <strong>{customerName}</strong> is 120m away and requesting to print documents at your shop.
             </p>
 
             {/* Shopkeeper Action Buttons: Accept or Request */}
@@ -217,11 +217,11 @@ export const ChatScreen: React.FC = () => {
           <div className="w-12 h-12 rounded-2xl bg-[#ffdad6] text-[#ba1a1a] flex items-center justify-center mx-auto">
             <span className="material-symbols-outlined text-[24px]">do_not_disturb_on</span>
           </div>
-          <h4 className="font-heading font-bold text-[16px] text-[#ba1a1a]">
-            Connection Request Declined
+          <h4 className="font-heading font-semibold text-[16px] text-[#ba1a1a]">
+            Request Declined
           </h4>
-          <p className="font-sans text-[12px] text-[#454556] max-w-[300px] mx-auto">
-            {shop.name} is currently processing a high-volume print spool. Please try another nearby certified shop.
+          <p className="font-sans text-[12px] text-[#6b6760] max-w-[300px] mx-auto">
+            {shop.name} is unable to take new print orders right now. Please select another nearby shop.
           </p>
           <button
             type="button"
@@ -292,16 +292,16 @@ export const ChatScreen: React.FC = () => {
                       {/* Ephemeral Token Chip */}
                       <div className="bg-[#f5f3ef] p-2.5 rounded-xl border border-[#ece8e1] flex items-center justify-between">
                         <div>
-                          <span className="font-sans text-[9px] uppercase tracking-wider text-[#767588] block">
-                            EPHEMERAL PIN
+                          <span className="font-sans text-[9px] uppercase tracking-wide text-[#767588] block">
+                            PICKUP PIN
                           </span>
                           <span className="font-mono text-[16px] font-bold text-[#3d3bf3]">
                             {msg.document.token}
                           </span>
                         </div>
                         <div className="text-right">
-                          <span className="font-sans text-[9px] uppercase tracking-wider text-[#767588] block">
-                            EST. COST
+                          <span className="font-sans text-[9px] uppercase tracking-wide text-[#767588] block">
+                            EST. TOTAL
                           </span>
                           <span className="font-mono text-[14px] font-bold text-[#1b1c1a]">
                             ₹{msg.document.totalPrice}
@@ -353,13 +353,13 @@ export const ChatScreen: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowDocumentModal(true)}
-              className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#3d3bf3] to-[#2725c4] hover:from-[#2e2cd4] hover:to-[#1e1cb0] text-white font-sans text-[13px] font-semibold flex items-center justify-between shadow-md shadow-[#3d3bf3]/25 active:scale-[0.99] transition-all cursor-pointer"
+              className="w-full py-3 px-4 rounded-2xl bg-[#3d3bf3] hover:bg-[#2e2cd4] text-white font-sans text-[13px] font-semibold flex items-center justify-between shadow-xs active:scale-[0.99] transition-all cursor-pointer"
             >
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px]">upload_file</span>
-                <span>Send Document to {operatorName}&apos;s Laser Printer</span>
+                <span className="material-symbols-outlined text-[19px]">upload_file</span>
+                <span>Send Document to Print</span>
               </div>
-              <span className="font-mono text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-bold">
+              <span className="font-sans text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">
                 ₹{shop.pricePerBw || 2}/pg
               </span>
             </button>
@@ -406,11 +406,11 @@ export const ChatScreen: React.FC = () => {
                   <span className="material-symbols-outlined text-[18px]">lock</span>
                 </div>
                 <div>
-                  <h4 className="font-heading font-bold text-[15px] text-[#1b1c1a]">
-                    Send Ephemeral Document
+                  <h4 className="font-heading font-semibold text-[15px] text-[#1b1c1a]">
+                    Send Document to Print
                   </h4>
-                  <p className="font-sans text-[11px] text-[#454556]">
-                    Direct to {shop.name} ({operatorName})
+                  <p className="font-sans text-[11px] text-[#6b6760]">
+                    {shop.name} • {operatorName}
                   </p>
                 </div>
               </div>
@@ -578,10 +578,10 @@ export const ChatScreen: React.FC = () => {
             <button
               type="button"
               onClick={handleSendDocument}
-              className="w-full h-[48px] rounded-full bg-[#3d3bf3] hover:bg-[#2e2cd4] text-white font-sans text-[14px] font-semibold flex items-center justify-center gap-2 shadow-md shadow-[#3d3bf3]/25 active:scale-98 transition-all cursor-pointer"
+              className="w-full h-11 rounded-xl bg-[#3d3bf3] hover:bg-[#2e2cd4] text-white font-sans text-[13px] font-semibold flex items-center justify-center gap-2 shadow-xs active:scale-98 transition-all cursor-pointer"
             >
-              <span className="material-symbols-outlined text-[19px]">send</span>
-              <span>Send Document to Xerox Spooler</span>
+              <span className="material-symbols-outlined text-[18px]">send</span>
+              <span>Send Document</span>
             </button>
           </div>
         </div>

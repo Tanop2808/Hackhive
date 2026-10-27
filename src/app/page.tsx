@@ -29,7 +29,7 @@ function MobileAppFrame() {
       case 'auth':
         return {
           title: 'PrintVault',
-          subtitle: 'Customer Access',
+          subtitle: 'Sign in',
           showBack: true,
           onBack: () => setCurrentScreen('home'),
         };
@@ -41,13 +41,13 @@ function MobileAppFrame() {
         };
       case 'shop_qr':
         return {
-          title: 'Shop Link / QR',
+          title: 'Print QR Code',
           showBack: true,
           onBack: () => setCurrentScreen('home'),
         };
       case 'live_tracker':
         return {
-          title: 'Tracker',
+          title: 'Print Status',
           showBack: true,
           onBack: () => setCurrentScreen('home'),
         };
@@ -61,35 +61,35 @@ function MobileAppFrame() {
       case 'receipts_list':
         return {
           title: 'PrintVault',
-          subtitle: 'Audit Archive',
+          subtitle: 'Receipts',
           showBack: true,
           onBack: () => setCurrentScreen('home'),
         };
       case 'profile':
         return {
           title: 'PrintVault',
-          subtitle: 'Profile & Vault',
+          subtitle: 'Profile',
           showBack: true,
           onBack: () => setCurrentScreen('home'),
         };
       case 'chat':
         return {
           title: 'PrintVault',
-          subtitle: 'Xerox Secure Chat',
+          subtitle: 'Chat',
           showBack: true,
           onBack: () => setCurrentScreen('home'),
         };
       case 'shopkeeper_auth':
         return {
           title: 'PrintVault',
-          subtitle: 'Operator Gateway',
+          subtitle: 'Shopkeeper Sign In',
           showBack: true,
           onBack: () => setCurrentScreen('home'),
         };
       case 'shopkeeper_dashboard':
         return {
           title: 'PrintVault',
-          subtitle: 'Kiosk Terminal',
+          subtitle: 'Shopkeeper Portal',
           showBack: true,
           onBack: () => setCurrentScreen('home'),
         };

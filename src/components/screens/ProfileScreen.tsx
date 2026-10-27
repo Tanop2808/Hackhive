@@ -33,9 +33,9 @@ export const ProfileScreen: React.FC = () => {
           <p className="font-sans text-[13px] text-[#454556] truncate">
             {email} • {age} yrs
           </p>
-          <span className="inline-flex items-center gap-1 font-mono text-[11px] text-[#1e0cde] bg-[#e1e0ff] px-2 py-0.5 rounded-md mt-1 w-fit font-semibold">
-            <span className="material-symbols-outlined text-[13px]">lock</span>
-            {currentUser?.vaultTier || 'Hardware Enclave'}
+          <span className="inline-flex items-center gap-1 font-sans text-[11px] text-[#1e0cde] bg-[#e1e0ff] px-2.5 py-0.5 rounded-full mt-1 w-fit font-medium">
+            <span className="material-symbols-outlined text-[13px]">verified</span>
+            Verified Account
           </span>
         </div>
       </div>
@@ -43,25 +43,25 @@ export const ProfileScreen: React.FC = () => {
       {/* Security Metrics Grid */}
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="bg-white rounded-2xl p-3.5 border border-[#ece8e1] shadow-2xs">
-          <span className="font-sans text-[11px] text-[#454556] block">Ephemeral Purges</span>
+          <span className="font-sans text-[11px] text-[#6b6760] block">Print Jobs Completed</span>
           <span className="font-mono text-[22px] font-bold text-[#1b1c1a] mt-0.5 block">
             {userProfile.ephemeralPurgesCompleted}
           </span>
-          <span className="font-sans text-[11px] text-emerald-700 font-medium">100% Zero-Leak</span>
+          <span className="font-sans text-[11px] text-emerald-700 font-medium">100% Private</span>
         </div>
         <div className="bg-white rounded-2xl p-3.5 border border-[#ece8e1] shadow-2xs">
-          <span className="font-sans text-[11px] text-[#454556] block">Protected Pages</span>
+          <span className="font-sans text-[11px] text-[#6b6760] block">Pages Printed</span>
           <span className="font-mono text-[22px] font-bold text-[#1b1c1a] mt-0.5 block">
             {userProfile.totalSavedPages}
           </span>
-          <span className="font-sans text-[11px] text-[#3d3bf3] font-medium">Client Encrypted</span>
+          <span className="font-sans text-[11px] text-[#3d3bf3] font-medium">Encrypted</span>
         </div>
       </div>
 
       {/* Security & Vault Settings */}
       <div className="bg-white rounded-2xl p-4 border border-[#ece8e1] shadow-sm space-y-4 mb-5">
         <h3 className="font-heading font-semibold text-[15px] text-[#1b1c1a]">
-          Privacy Guard Controls
+          Privacy Controls
         </h3>
 
         <div className="flex items-center justify-between">
@@ -69,7 +69,7 @@ export const ProfileScreen: React.FC = () => {
             <p className="font-sans text-[13px] font-semibold text-[#1b1c1a]">
               Aadhaar &amp; National ID Auto-Masking
             </p>
-            <p className="font-sans text-[11px] text-[#454556]">
+            <p className="font-sans text-[11px] text-[#6b6760]">
               Mask first 8 digits before upload
             </p>
           </div>
@@ -92,10 +92,10 @@ export const ProfileScreen: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="pr-2">
             <p className="font-sans text-[13px] font-semibold text-[#1b1c1a]">
-              Enforce Post-Render Shred
+              Auto-Erase From Printer
             </p>
-            <p className="font-sans text-[11px] text-[#454556]">
-              Command DoD 5220.22-M memory overwrite
+            <p className="font-sans text-[11px] text-[#6b6760]">
+              Erase document from printer memory immediately after printing
             </p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer select-none">
@@ -104,7 +104,7 @@ export const ProfileScreen: React.FC = () => {
               checked={autoPurgeSpooler}
               onChange={(e) => {
                 setAutoPurgeSpooler(e.target.checked);
-                triggerToast('Shred protocol confirmed');
+                triggerToast('Auto-erase preference updated');
               }}
               className="sr-only peer"
             />

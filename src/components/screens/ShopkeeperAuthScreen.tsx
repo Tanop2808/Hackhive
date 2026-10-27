@@ -60,19 +60,19 @@ export const ShopkeeperAuthScreen: React.FC = () => {
     <div className="flex flex-col w-full pb-8 pt-2">
       {/* Kiosk Gateway Header */}
       <div className="text-center mb-6">
-        <div className="w-14 h-14 rounded-3xl bg-[#07006c] flex items-center justify-center text-white mx-auto mb-3 shadow-lg shadow-[#07006c]/25">
+        <div className="w-14 h-14 rounded-3xl bg-[#07006c] flex items-center justify-center text-white mx-auto mb-3 shadow-lg shadow-[#07006c]/20">
           <span className="material-symbols-outlined text-[30px]">storefront</span>
         </div>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e1e0ff] text-[#07006c] font-mono text-[11px] font-semibold mb-2">
-          <span>Certified Xerox Operator Terminal</span>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e1e0ff] text-[#07006c] font-sans text-[11px] font-medium mb-2">
+          <span>Shopkeeper Portal</span>
         </div>
-        <h2 className="font-heading font-bold text-[24px] text-[#1b1c1a] tracking-tight">
-          {mode === 'signin' ? 'Xerox Operator Sign In' : 'Register Certified Store'}
+        <h2 className="font-heading font-semibold text-[22px] text-[#1b1c1a] tracking-tight">
+          {mode === 'signin' ? 'Shopkeeper Sign In' : 'Register Your Shop'}
         </h2>
-        <p className="font-sans text-[13px] text-[#454556] mt-1 max-w-[320px] mx-auto">
+        <p className="font-sans text-[13px] text-[#6b6760] mt-1 max-w-[320px] mx-auto">
           {mode === 'signin'
-            ? 'Sign in to access your Xerox kiosk terminal, accept incoming customer print requests, and stream documents directly to printer RAM'
-            : 'Join the PrintVault network as an authorized zero-store Xerox printing partner'}
+            ? 'Sign in to receive print requests from nearby customers'
+            : 'Register your Xerox shop to start receiving print orders'}
         </p>
       </div>
 
@@ -84,13 +84,13 @@ export const ShopkeeperAuthScreen: React.FC = () => {
             setMode('signin');
             setErrorMessage(null);
           }}
-          className={`py-2 text-[13px] font-sans font-semibold rounded-full transition-all cursor-pointer ${
+          className={`py-2 text-[13px] font-sans font-medium rounded-full transition-all cursor-pointer ${
             mode === 'signin'
-              ? 'bg-white text-[#07006c] shadow-xs'
+              ? 'bg-white text-[#07006c] shadow-xs font-semibold'
               : 'text-[#454556] hover:text-[#1b1c1a]'
           }`}
         >
-          Operator Sign In
+          Sign In
         </button>
         <button
           type="button"
@@ -98,13 +98,13 @@ export const ShopkeeperAuthScreen: React.FC = () => {
             setMode('signup');
             setErrorMessage(null);
           }}
-          className={`py-2 text-[13px] font-sans font-semibold rounded-full transition-all cursor-pointer ${
+          className={`py-2 text-[13px] font-sans font-medium rounded-full transition-all cursor-pointer ${
             mode === 'signup'
-              ? 'bg-white text-[#07006c] shadow-xs'
+              ? 'bg-white text-[#07006c] shadow-xs font-semibold'
               : 'text-[#454556] hover:text-[#1b1c1a]'
           }`}
         >
-          Register Store (New)
+          Register Shop
         </button>
       </div>
 
@@ -269,12 +269,12 @@ export const ShopkeeperAuthScreen: React.FC = () => {
           ) : mode === 'signin' ? (
             <>
               <span className="material-symbols-outlined text-[20px]">login</span>
-              <span>Sign In to Operator Terminal</span>
+              <span>Sign In</span>
             </>
           ) : (
             <>
               <span className="material-symbols-outlined text-[20px]">add_business</span>
-              <span>Register &amp; Launch Kiosk</span>
+              <span>Register Shop</span>
             </>
           )}
         </button>

@@ -57,7 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
                   {title}
                 </span>
                 {subtitle && (
-                  <span className="font-mono text-[11px] text-[#454556] font-medium mt-0.5">
+                  <span className="font-sans text-[11px] text-[#6b6760] font-normal mt-0.5">
                     {subtitle}
                   </span>
                 )}
