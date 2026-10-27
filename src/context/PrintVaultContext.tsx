@@ -1,14 +1,18 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ScreenType, PrintJob, RecentPrintItem, PrintShop, ViewMode } from '@/types/printvault';
-import { initialActiveJob, mockRecentPrints, mockShops } from '@/data/mockData';
+import { ScreenType, PrintJob, RecentPrintItem, PrintShop, ViewMode, Customer } from '@/types/printvault';
+import { initialActiveJob, mockRecentPrints, mockShops, userProfile } from '@/data/mockData';
 
 interface PrintVaultContextType {
   currentScreen: ScreenType;
   setCurrentScreen: (screen: ScreenType) => void;
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
+  currentUser: Customer | null;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (name: string, age: number, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signOut: () => void;
   activeJob: PrintJob | null;
   setActiveJob: React.Dispatch<React.SetStateAction<PrintJob | null>>;
   recentPrints: RecentPrintItem[];
@@ -36,6 +40,14 @@ const PrintVaultContext = createContext<PrintVaultContextType | undefined>(undef
 export function PrintVaultProvider({ children }: { children: React.ReactNode }) {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>('home');
   const [viewMode, setViewMode] = useState<ViewMode>('auto');
+  const [currentUser, setCurrentUser] = useState<Customer | null>({
+    id: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
+    name: userProfile.name,
+    age: 24,
+    email: userProfile.email,
+    avatarUrl: userProfile.avatar,
+    vaultTier: userProfile.vaultSecurityLevel,
+  });
   const [activeJob, setActiveJob] = useState<PrintJob | null>(initialActiveJob);
   const [recentPrints, setRecentPrints] = useState<RecentPrintItem[]>(mockRecentPrints);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -62,6 +74,59 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
     setTimeout(() => {
       setToastMessage(null);
     }, 2500);
+  };
+
+  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (data.success && data.customer) {
+        setCurrentUser(data.customer);
+        triggerToast(`Welcome back, ${data.customer.name}!`);
+        setCurrentScreen('home');
+        return { success: true };
+      } else {
+        return { success: false, error: data.error || 'Invalid credentials' };
+      }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Network connection failed' };
+    }
+  };
+
+  const signUp = async (
+    name: string,
+    age: number,
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, age, email, password }),
+      });
+      const data = await res.json();
+      if (data.success && data.customer) {
+        setCurrentUser(data.customer);
+        triggerToast(`Welcome to PrintVault, ${data.customer.name}!`);
+        setCurrentScreen('home');
+        return { success: true };
+      } else {
+        return { success: false, error: data.error || 'Failed to create customer account' };
+      }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Network connection failed' };
+    }
+  };
+
+  const signOut = () => {
+    setCurrentUser(null);
+    triggerToast('Signed out of hardware enclave.');
+    setCurrentScreen('auth');
   };
 
   const createNewJob = async (jobData: {
@@ -216,6 +281,10 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
         setCurrentScreen,
         viewMode,
         setViewMode,
+        currentUser,
+        signIn,
+        signUp,
+        signOut,
         activeJob,
         setActiveJob,
         recentPrints,

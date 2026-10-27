@@ -13,6 +13,7 @@ import { LiveTrackerScreen } from '@/components/screens/LiveTrackerScreen';
 import { VerificationReceiptScreen } from '@/components/screens/VerificationReceiptScreen';
 import { ReceiptsListScreen } from '@/components/screens/ReceiptsListScreen';
 import { ProfileScreen } from '@/components/screens/ProfileScreen';
+import { AuthScreen } from '@/components/screens/AuthScreen';
 import { DesktopWebLayout } from '@/components/desktop/DesktopWebLayout';
 
 function MobileAppFrame() {
@@ -22,6 +23,13 @@ function MobileAppFrame() {
     switch (currentScreen) {
       case 'home':
         return { title: 'PrintVault', subtitle: 'Home', showBack: false };
+      case 'auth':
+        return {
+          title: 'PrintVault',
+          subtitle: 'Customer Access',
+          showBack: true,
+          onBack: () => setCurrentScreen('home'),
+        };
       case 'new_job':
         return {
           title: 'New Print Job',
@@ -70,6 +78,8 @@ function MobileAppFrame() {
     switch (currentScreen) {
       case 'home':
         return <HomeScreen />;
+      case 'auth':
+        return <AuthScreen />;
       case 'new_job':
         return <NewPrintJobScreen />;
       case 'shop_qr':

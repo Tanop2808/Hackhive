@@ -5,9 +5,19 @@ export type ScreenType =
   | 'live_tracker'
   | 'receipt'
   | 'receipts_list'
-  | 'profile';
+  | 'profile'
+  | 'auth';
 
 export type ViewMode = 'auto' | 'mobile' | 'desktop';
+
+export interface Customer {
+  id: string;
+  name: string;
+  age: number;
+  email: string;
+  avatarUrl?: string;
+  vaultTier?: string;
+}
 
 export type JobStatus =
   | 'draft'

@@ -11,14 +11,17 @@ export const HomeScreen: React.FC = () => {
     viewReceipt,
     countdown,
     formatCountdown,
+    currentUser,
   } = usePrintVault();
+
+  const customerFirstName = currentUser?.name ? currentUser.name.split(' ')[0] : 'Customer';
 
   return (
     <div className="flex flex-col w-full">
       {/* Greeting Banner */}
       <div className="pt-2 pb-5 flex flex-col gap-1">
         <h1 className="font-heading font-bold text-[28px] text-[#1b1c1a] tracking-tight leading-tight">
-          Good morning, Rohan
+          Good morning, {customerFirstName}
         </h1>
         <p className="font-sans text-[14px] text-[#454556]">
           Ready to print ephemeral documents securely

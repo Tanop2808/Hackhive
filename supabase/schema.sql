@@ -203,3 +203,43 @@ on public.purge_receipts for select using (true);
 
 create policy "Allow public insert purge receipts"
 on public.purge_receipts for insert with check (true);
+
+-- ------------------------------------------------------------------------------
+-- 6. Customers Table (Name, Age, Email, Password, Vault Enclave)
+-- ------------------------------------------------------------------------------
+create table if not exists public.customers (
+    id uuid primary key default gen_random_uuid(),
+    name text not null,
+    age integer not null,
+    email text not null unique,
+    password_hash text not null,
+    avatar_url text default 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    vault_tier text default 'Hardware Enclave Tier 4',
+    created_at timestamptz default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_customers_email on public.customers(email);
+
+alter table public.customers enable row level security;
+
+create policy "Allow public read customers"
+on public.customers for select using (true);
+
+create policy "Allow public insert customers"
+on public.customers for insert with check (true);
+
+create policy "Allow public update customers"
+on public.customers for update using (true);
+
+-- Seed initial customer (Rohan Sharma)
+insert into public.customers (id, name, age, email, password_hash, vault_tier)
+values (
+    'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
+    'Rohan Sharma',
+    24,
+    'rohan.sharma@domain.in',
+    'vault123',
+    'Hardware Enclave Tier 4'
+)
+on conflict (email) do nothing;
+

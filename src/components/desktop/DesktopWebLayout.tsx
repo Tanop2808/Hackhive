@@ -10,6 +10,7 @@ import { LiveTrackerScreen } from '@/components/screens/LiveTrackerScreen';
 import { VerificationReceiptScreen } from '@/components/screens/VerificationReceiptScreen';
 import { ReceiptsListScreen } from '@/components/screens/ReceiptsListScreen';
 import { ProfileScreen } from '@/components/screens/ProfileScreen';
+import { AuthScreen } from '@/components/screens/AuthScreen';
 
 export const DesktopWebLayout: React.FC = () => {
   const {
@@ -21,6 +22,7 @@ export const DesktopWebLayout: React.FC = () => {
     countdown,
     formatCountdown,
     triggerToast,
+    currentUser,
   } = usePrintVault();
 
   const navLinks = [
@@ -29,6 +31,7 @@ export const DesktopWebLayout: React.FC = () => {
     { id: 'live_tracker', label: 'Live Tracker', icon: 'sensors' },
     { id: 'receipts_list', label: 'Purge Receipts', icon: 'receipt_long' },
     { id: 'profile', label: 'Hardware Enclave', icon: 'security' },
+    { id: 'auth', label: currentUser ? 'Customer Access' : 'Sign In', icon: 'account_circle' },
   ];
 
   return (
@@ -93,20 +96,31 @@ export const DesktopWebLayout: React.FC = () => {
               <span>Enclave Tier 4 Active</span>
             </div>
 
-            <button
-              onClick={() => setCurrentScreen('profile')}
-              type="button"
-              className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-full bg-white hover:bg-[#f5f3ef] border border-[#ece8e1] shadow-2xs transition-all cursor-pointer"
-            >
-              <img
-                src={userProfile.avatar}
-                alt={userProfile.name}
-                className="w-7 h-7 rounded-full object-cover"
-              />
-              <span className="font-heading text-[13px] font-semibold text-[#1b1c1a]">
-                {userProfile.name}
-              </span>
-            </button>
+            {currentUser ? (
+              <button
+                onClick={() => setCurrentScreen('profile')}
+                type="button"
+                className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-full bg-white hover:bg-[#f5f3ef] border border-[#ece8e1] shadow-2xs transition-all cursor-pointer"
+              >
+                <img
+                  src={currentUser.avatarUrl || userProfile.avatar}
+                  alt={currentUser.name}
+                  className="w-7 h-7 rounded-full object-cover"
+                />
+                <span className="font-heading text-[13px] font-semibold text-[#1b1c1a]">
+                  {currentUser.name}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setCurrentScreen('auth')}
+                type="button"
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#3d3bf3] hover:bg-[#2e2cd4] text-white font-sans text-[13px] font-semibold shadow-xs transition-all cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[17px]">login</span>
+                <span>Sign In / Sign Up</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -277,6 +291,22 @@ export const DesktopWebLayout: React.FC = () => {
                 chevron_right
               </span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setCurrentScreen(currentUser ? 'profile' : 'auth')}
+              className="w-full py-2.5 px-4 rounded-2xl bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] font-sans text-[13px] font-medium flex items-center justify-between transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[#3d3bf3]">
+                  {currentUser ? 'verified_user' : 'lock_open'}
+                </span>
+                <span className="truncate">{currentUser ? currentUser.name : 'Customer Sign In / Up'}</span>
+              </div>
+              <span className="font-mono text-[10px] text-[#3d3bf3] bg-[#e1e0ff] px-2 py-0.5 rounded-full font-semibold">
+                {currentUser ? 'Active' : 'Guest'}
+              </span>
+            </button>
           </div>
 
           {/* Privacy Protocol Guarantee Box */}
@@ -298,6 +328,7 @@ export const DesktopWebLayout: React.FC = () => {
           <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-sm border border-[#ece8e1]">
             {/* Screen switcher */}
             {currentScreen === 'home' && <HomeScreen />}
+            {currentScreen === 'auth' && <AuthScreen />}
             {currentScreen === 'new_job' && <NewPrintJobScreen />}
             {currentScreen === 'shop_qr' && <ShopLinkQrScreen />}
             {currentScreen === 'live_tracker' && <LiveTrackerScreen />}

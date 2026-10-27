@@ -17,7 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   showBack = false,
   onBack,
 }) => {
-  const { currentScreen, setCurrentScreen } = usePrintVault();
+  const { currentScreen, setCurrentScreen, currentUser } = usePrintVault();
 
   const handleBack = () => {
     if (onBack) {
@@ -44,7 +44,10 @@ export const Header: React.FC<HeaderProps> = ({
             )}
 
             {/* PrintVault Shield Logo */}
-            <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => setCurrentScreen('home')}
+            >
               <div className="w-8 h-8 rounded-xl bg-[#3d3bf3] flex items-center justify-center text-white shadow-sm shadow-[#3d3bf3]/20">
                 <span className="material-symbols-outlined text-[19px]">shield_lock</span>
               </div>
@@ -62,24 +65,34 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* User Profile Avatar */}
+          {/* User Profile / Auth Avatar */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentScreen('profile')}
-              aria-label="Profile"
-              className={`relative p-0.5 rounded-full transition-all ${
-                currentScreen === 'profile'
-                  ? 'ring-2 ring-[#3d3bf3]'
-                  : 'ring-1 ring-[#c6c4d9] hover:ring-[#3d3bf3]'
-              }`}
-            >
-              <img
-                alt={userProfile.name}
-                className="w-8 h-8 rounded-full object-cover"
-                src={userProfile.avatar}
-              />
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white"></span>
-            </button>
+            {currentUser ? (
+              <button
+                onClick={() => setCurrentScreen('profile')}
+                aria-label="Profile"
+                className={`relative p-0.5 rounded-full transition-all cursor-pointer ${
+                  currentScreen === 'profile'
+                    ? 'ring-2 ring-[#3d3bf3]'
+                    : 'ring-1 ring-[#c6c4d9] hover:ring-[#3d3bf3]'
+                }`}
+              >
+                <img
+                  alt={currentUser.name}
+                  className="w-8 h-8 rounded-full object-cover"
+                  src={currentUser.avatarUrl || userProfile.avatar}
+                />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white"></span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setCurrentScreen('auth')}
+                className="px-3 py-1.5 rounded-full bg-[#3d3bf3] text-white text-[12px] font-sans font-semibold hover:bg-[#2e2cd4] transition-all shadow-xs"
+                type="button"
+              >
+                Sign In
+              </button>
+            )}
           </div>
         </div>
       </div>
