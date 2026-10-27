@@ -857,13 +857,21 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
       timestamp: currentTime,
     };
 
-    const updatedSession = {
+    const updatedSession: import('@/types/printvault').ChatSession = {
       ...activeChatSession,
+      status: 'accepted',
       messages: [...activeChatSession.messages, docMsg, shopReply],
     };
 
     setActiveChatSession(updatedSession);
     triggerToast(`Document sent to ${shop.name} printer`);
+
+    // Synchronize backend status
+    fetch(`/api/chat/request/${encodeURIComponent(activeChatSession.requestId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'accepted' }),
+    }).catch(() => {});
 
     // Broadcast in real-time across tabs and devices!
     broadcastEvent({
