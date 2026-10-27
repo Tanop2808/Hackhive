@@ -9,8 +9,6 @@ export const HomeScreen: React.FC = () => {
   const {
     activeJob,
     setCurrentScreen,
-    recentPrints,
-    viewReceipt,
     countdown,
     formatCountdown,
     currentUser,
@@ -258,72 +256,6 @@ export const HomeScreen: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* QUICK PIPELINE SHORTCUT */}
-      <div className="w-full mb-6">
-        <button
-          onClick={() => setCurrentScreen('new_job')}
-          className="w-full h-[50px] rounded-2xl bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] font-sans text-[14px] font-semibold flex items-center justify-center gap-2 border border-[#ece8e1] transition-all cursor-pointer"
-          type="button"
-        >
-          <span className="material-symbols-outlined text-[20px] text-[#3d3bf3]">add_circle</span>
-          <span>Or Create Offline Print Token Pipeline</span>
-        </button>
-      </div>
-
-      {/* Recent Purge Receipts */}
-      <section className="w-full flex flex-col gap-3">
-        <div className="flex items-center justify-between px-1">
-          <h2 className="font-heading font-bold text-[18px] text-[#1b1c1a] tracking-tight">
-            Recent Purge Receipts
-          </h2>
-          <button
-            type="button"
-            onClick={() => setCurrentScreen('receipts_list')}
-            className="font-sans text-[12px] text-[#3d3bf3] hover:underline font-semibold"
-          >
-            View all ({recentPrints.length})
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-2.5">
-          {recentPrints.slice(0, 3).map((item) => (
-            <div
-              key={item.id}
-              onClick={() => viewReceipt(item)}
-              role="button"
-              tabIndex={0}
-              className="w-full p-3.5 rounded-2xl bg-white shadow-xs border border-[#ece8e1] flex items-center justify-between gap-3 transition-all hover:border-[#3d3bf3]/40 cursor-pointer"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    item.status === 'Done'
-                      ? 'bg-[#ddf5e6] text-[#0a542a]'
-                      : 'bg-[#f5f3ef] text-[#454556]'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    {item.status === 'Done' ? 'verified' : 'lock'}
-                  </span>
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="font-sans text-[13px] font-semibold text-[#1b1c1a] truncate">
-                    {item.fileName}
-                  </span>
-                  <span className="font-sans text-[11px] text-[#454556] truncate">
-                    {item.shopName} · {item.timestamp}
-                  </span>
-                </div>
-              </div>
-
-              <span className="font-mono text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#ddf5e6] text-[#0a542a] shrink-0">
-                {item.status}
-              </span>
             </div>
           ))}
         </div>
