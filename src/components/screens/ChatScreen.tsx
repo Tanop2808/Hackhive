@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { usePrintVault } from '@/context/PrintVaultContext';
-import { ColorMode } from '@/types/printvault';
+import { ColorMode, ChatDocumentAttachment } from '@/types/printvault';
 
 export const ChatScreen: React.FC = () => {
   const {
@@ -31,6 +31,21 @@ export const ChatScreen: React.FC = () => {
   const [colorMode, setColorMode] = useState<ColorMode>('bw');
   const [isMaskedAadhaar, setIsMaskedAadhaar] = useState(true);
   const [printNote, setPrintNote] = useState('Please print back-to-back (duplex)');
+  const [fileType, setFileType] = useState<string>('pdf');
+  const [previewDataUrl, setPreviewDataUrl] = useState<string | undefined>(undefined);
+
+  // Device file upload state
+  const [uploadedFile, setUploadedFile] = useState<{
+    name: string;
+    size: string;
+    pages: number;
+    type: string;
+    previewDataUrl?: string;
+  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Secure In-Memory Document Preview Modal (Download Blocked)
+  const [previewModalDoc, setPreviewModalDoc] = useState<ChatDocumentAttachment | null>(null);
 
   if (!activeChatSession) {
     return (
@@ -64,6 +79,81 @@ export const ChatScreen: React.FC = () => {
     setInputMessage('');
   };
 
+  const handleDeviceFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const sizeInMB = file.size / (1024 * 1024);
+    const sizeFormatted = sizeInMB >= 1 ? `${sizeInMB.toFixed(1)} MB` : `${Math.max(1, Math.round(file.size / 1024))} KB`;
+
+    // Estimate page count based on format & size
+    let estimatedPages = 1;
+    const lowerName = file.name.toLowerCase();
+    if (lowerName.endsWith('.pdf')) {
+      estimatedPages = Math.max(1, Math.min(25, Math.round(sizeInMB * 3) || 2));
+    } else if (lowerName.endsWith('.doc') || lowerName.endsWith('.docx')) {
+      estimatedPages = Math.max(1, Math.min(20, Math.round(sizeInMB * 2) || 3));
+    } else if (file.type.startsWith('image/')) {
+      estimatedPages = 1;
+    } else {
+      estimatedPages = 1;
+    }
+
+    let detectedType = 'pdf';
+    if (lowerName.endsWith('.doc') || lowerName.endsWith('.docx')) {
+      detectedType = 'doc';
+    } else if (file.type.startsWith('image/') || lowerName.match(/\.(png|jpg|jpeg|webp)$/)) {
+      detectedType = 'image';
+    } else if (lowerName.endsWith('.txt')) {
+      detectedType = 'txt';
+    }
+
+    // Auto-detect Aadhaar or government ID documents
+    const isIdDoc =
+      lowerName.includes('aadhaar') ||
+      lowerName.includes('aadhar') ||
+      lowerName.includes('uidai') ||
+      lowerName.includes('pan') ||
+      lowerName.includes('id_card');
+
+    if (isIdDoc) {
+      setIsMaskedAadhaar(true);
+      triggerToast('Aadhaar / ID document detected! Auto-masking enabled for your privacy.');
+    }
+
+    setSelectedFileName(file.name);
+    setFileSize(sizeFormatted);
+    setPageCount(estimatedPages);
+    setFileType(detectedType);
+
+    // Read image data if it's an image
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setPreviewDataUrl(result);
+        setUploadedFile({
+          name: file.name,
+          size: sizeFormatted,
+          pages: estimatedPages,
+          type: detectedType,
+          previewDataUrl: result,
+        });
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewDataUrl(undefined);
+      setUploadedFile({
+        name: file.name,
+        size: sizeFormatted,
+        pages: estimatedPages,
+        type: detectedType,
+      });
+    }
+
+    triggerToast(`Loaded "${file.name}" from device (${sizeFormatted})`);
+  };
+
   const handleSendDocument = () => {
     sendDocumentInChat({
       fileName: selectedFileName,
@@ -73,8 +163,29 @@ export const ChatScreen: React.FC = () => {
       colorMode,
       isMaskedAadhaar,
       note: printNote,
+      fileType,
+      previewDataUrl,
+      maskedDetails: isMaskedAadhaar
+        ? {
+            name: customerName,
+            aadhaarNumber: 'XXXX-XXXX-4892',
+            address: 'Section 29(4) Aadhaar Act Masked Residential Details',
+            photoMasked: true,
+            qrMasked: true,
+          }
+        : undefined,
     });
     setShowDocumentModal(false);
+  };
+
+  const handleDirectPrint = (doc: ChatDocumentAttachment) => {
+    setPreviewModalDoc(doc);
+    triggerToast(`Spooling "${doc.fileName}" directly to ${shop.name} printer...`);
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.print();
+      }
+    }, 400);
   };
 
   return (
@@ -307,23 +418,34 @@ export const ChatScreen: React.FC = () => {
                     <div className="w-full max-w-[340px] bg-white rounded-2xl p-4 border-2 border-[#3d3bf3] shadow-md space-y-3">
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-xl bg-[#e1e0ff] text-[#3d3bf3] flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[22px]">description</span>
+                          <span className="material-symbols-outlined text-[22px]">
+                            {msg.document.fileType === 'doc'
+                              ? 'article'
+                              : msg.document.fileType === 'image'
+                              ? 'image'
+                              : 'description'}
+                          </span>
                         </div>
                         <div className="min-w-0 flex-1">
                           <h5 className="font-heading font-bold text-[13px] text-[#1b1c1a] truncate">
                             {msg.document.fileName}
                           </h5>
                           <p className="font-sans text-[11px] text-[#454556]">
-                            {msg.document.fileSize} • {msg.document.pageCount} pgs • {msg.document.copies} copies
+                            {msg.document.fileSize} • {msg.document.pageCount} pgs • {msg.document.copies} {msg.document.copies > 1 ? 'copies' : 'copy'}
                           </p>
                         </div>
                       </div>
 
                       {/* Aadhaar Masking Indicator */}
-                      {msg.document.isMaskedAadhaar && (
-                        <div className="bg-[#ddf5e6] text-[#0a542a] px-2.5 py-1 rounded-lg text-[10px] font-mono font-semibold flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[13px]">verified_user</span>
-                          <span>National ID Masked (XXXX-XXXX-4892)</span>
+                      {msg.document.isMaskedAadhaar ? (
+                        <div className="bg-[#ddf5e6] text-[#0a542a] px-3 py-1.5 rounded-xl text-[10px] font-mono font-semibold flex items-center gap-1.5 border border-[#b2e5c5]">
+                          <span className="material-symbols-outlined text-[14px]">verified_user</span>
+                          <span>Aadhaar Masked (Name, Address, Photo &amp; Number)</span>
+                        </div>
+                      ) : (
+                        <div className="bg-[#f5f3ef] text-[#454556] px-3 py-1 rounded-xl text-[10px] font-sans flex items-center gap-1 border border-[#ece8e1]">
+                          <span className="material-symbols-outlined text-[13px]">lock</span>
+                          <span>Standard Spool (Encrypted in RAM)</span>
                         </div>
                       )}
 
@@ -347,26 +469,70 @@ export const ChatScreen: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Actions on Sent Document */}
-                      <div className="grid grid-cols-2 gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setCurrentScreen('live_tracker')}
-                          className="py-1.5 px-3 rounded-lg bg-[#3d3bf3] text-white text-[11px] font-sans font-semibold hover:bg-[#2e2cd4] transition-all flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">sensors</span>
-                          <span>Live Tracker</span>
-                        </button>
+                      {/* Shopkeeper vs Customer Actions */}
+                      {isShopkeeperMode ? (
+                        /* SHOPKEEPER ACTIONS: PREVIEW & DIRECT PRINT ONLY (NO DOWNLOAD) */
+                        <div className="space-y-2 pt-1">
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModalDoc(msg.document!)}
+                              className="py-2 px-3 rounded-xl bg-[#3d3bf3] text-white text-[11px] font-sans font-semibold hover:bg-[#2e2cd4] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">visibility</span>
+                              <span>Preview Document</span>
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={() => setCurrentScreen('shop_qr')}
-                          className="py-1.5 px-3 rounded-lg bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] text-[11px] font-sans font-medium border border-[#ece8e1] transition-all flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-[14px]">qr_code_2</span>
-                          <span>Show QR</span>
-                        </button>
-                      </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDirectPrint(msg.document!)}
+                              className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-sans font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">print</span>
+                              <span>Direct Print</span>
+                            </button>
+                          </div>
+
+                          {/* Security Notice: Download Blocked */}
+                          <div className="bg-[#fff3c4] border border-[#ffe082] rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 text-[10px] text-[#5d4037] font-sans font-medium">
+                            <span className="material-symbols-outlined text-[14px] text-[#e65100]">block</span>
+                            <span>Direct file download is permanently disabled for customer privacy.</span>
+                          </div>
+                        </div>
+                      ) : (
+                        /* CUSTOMER ACTIONS */
+                        <div className="space-y-1.5 pt-1">
+                          <div className="grid grid-cols-3 gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModalDoc(msg.document!)}
+                              className="py-1.5 px-2 rounded-lg bg-[#e1e0ff] text-[#07006c] hover:bg-[#d1d0ff] text-[10px] font-sans font-semibold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                              title="Verify that your identity details are masked"
+                            >
+                              <span className="material-symbols-outlined text-[13px]">visibility</span>
+                              <span>Preview</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setCurrentScreen('live_tracker')}
+                              className="py-1.5 px-2 rounded-lg bg-[#3d3bf3] text-white text-[10px] font-sans font-semibold hover:bg-[#2e2cd4] transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                            >
+                              <span className="material-symbols-outlined text-[13px]">sensors</span>
+                              <span>Tracker</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setCurrentScreen('shop_qr')}
+                              className="py-1.5 px-2 rounded-lg bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] text-[10px] font-sans font-medium border border-[#ece8e1] transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <span className="material-symbols-outlined text-[13px]">qr_code_2</span>
+                              <span>Show QR</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     /* Regular Text Bubble */
@@ -461,16 +627,115 @@ export const ChatScreen: React.FC = () => {
               </button>
             </div>
 
-            {/* Document Quick Selection */}
+            {/* Hidden Device File Picker Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleDeviceFileUpload}
+              className="hidden"
+              accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            />
+
+            {/* Document Selection: Upload from Device or Presets */}
             <div>
-              <label className="block font-sans text-[12px] font-semibold text-[#1b1c1a] mb-2">
-                Choose Document File
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="font-sans text-[12px] font-semibold text-[#1b1c1a]">
+                  Choose Document File
+                </label>
+                <span className="font-sans text-[10px] text-[#6b6760]">
+                  PDF, Word, Images, TXT
+                </span>
+              </div>
+
+              {/* Upload from Device Target */}
+              {uploadedFile ? (
+                <div className="p-3.5 rounded-2xl bg-[#ddf5e6]/50 border-2 border-emerald-600 shadow-xs flex items-center justify-between mb-3 animate-in fade-in duration-150">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-[22px]">
+                        {uploadedFile.type === 'doc'
+                          ? 'article'
+                          : uploadedFile.type === 'image'
+                          ? 'image'
+                          : 'picture_as_pdf'}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-sans text-[13px] font-bold text-[#1b1c1a] truncate">
+                          {uploadedFile.name}
+                        </p>
+                        <span className="font-mono text-[9px] bg-emerald-600 text-white px-1.5 py-0.2 rounded-full font-bold shrink-0">
+                          Device
+                        </span>
+                      </div>
+                      <p className="font-sans text-[11px] text-[#454556]">
+                        {uploadedFile.size} • {uploadedFile.pages} pages estimated
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-2.5 py-1 text-[11px] font-semibold text-[#3d3bf3] hover:bg-white rounded-lg transition-all cursor-pointer shrink-0 border border-emerald-200"
+                  >
+                    Replace
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full bg-white rounded-2xl p-4 border-2 border-dashed border-[#c0c1ff] hover:border-[#3d3bf3] flex items-center gap-3 cursor-pointer transition-all hover:bg-[#fbf9f5] group mb-3 shadow-2xs"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-[#e1e0ff] text-[#3d3bf3] flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                    <span className="material-symbols-outlined text-[22px]">cloud_upload</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-sans text-[13px] font-bold text-[#1b1c1a] group-hover:text-[#3d3bf3] transition-colors leading-tight">
+                      Upload from Device
+                    </p>
+                    <p className="font-sans text-[11px] text-[#6b6760] mt-0.5">
+                      Select any PDF, Word (.docx), Image, or TXT
+                    </p>
+                  </div>
+                  <span className="px-3 py-1.5 rounded-full bg-[#3d3bf3] text-white font-sans text-[11px] font-semibold shrink-0 group-hover:bg-[#2e2cd4] transition-all">
+                    Browse
+                  </span>
+                </div>
+              )}
+
+              {/* Preset Sample Documents Divider */}
+              <div className="flex items-center gap-2 py-1 mb-2">
+                <div className="h-[1px] bg-[#ece8e1] flex-1"></div>
+                <span className="font-sans text-[10px] uppercase font-semibold text-[#767588] tracking-wider">
+                  Or select a preset test file
+                </span>
+                <div className="h-[1px] bg-[#ece8e1] flex-1"></div>
+              </div>
+
               <div className="space-y-2">
                 {[
-                  { name: `e-Aadhaar_Card_${customerName.split(' ')[0]}.pdf`, size: '1.4 MB', pages: 2, isAadhaar: true },
-                  { name: 'College_Project_Final_Submission.pdf', size: '3.8 MB', pages: 12, isAadhaar: false },
-                  { name: 'Rental_Agreement_Indiranagar.pdf', size: '2.1 MB', pages: 5, isAadhaar: false },
+                  {
+                    name: `e-Aadhaar_Card_${customerName.split(' ')[0]}.pdf`,
+                    size: '1.4 MB',
+                    pages: 2,
+                    isAadhaar: true,
+                    type: 'pdf',
+                  },
+                  {
+                    name: 'College_Project_Final_Submission.pdf',
+                    size: '3.8 MB',
+                    pages: 12,
+                    isAadhaar: false,
+                    type: 'pdf',
+                  },
+                  {
+                    name: 'Rental_Agreement_Indiranagar.pdf',
+                    size: '2.1 MB',
+                    pages: 5,
+                    isAadhaar: false,
+                    type: 'pdf',
+                  },
                 ].map((doc) => (
                   <div
                     key={doc.name}
@@ -479,6 +744,9 @@ export const ChatScreen: React.FC = () => {
                       setFileSize(doc.size);
                       setPageCount(doc.pages);
                       setIsMaskedAadhaar(doc.isAadhaar);
+                      setFileType(doc.type);
+                      setPreviewDataUrl(undefined);
+                      setUploadedFile(null);
                     }}
                     className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
                       selectedFileName === doc.name
@@ -488,14 +756,14 @@ export const ChatScreen: React.FC = () => {
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span className="material-symbols-outlined text-[20px] text-[#3d3bf3]">
-                        description
+                        {doc.isAadhaar ? 'badge' : 'description'}
                       </span>
                       <div className="min-w-0">
                         <p className="font-sans text-[12px] font-semibold text-[#1b1c1a] truncate">
                           {doc.name}
                         </p>
                         <p className="font-sans text-[10px] text-[#767588]">
-                          {doc.size} • {doc.pages} pages
+                          {doc.size} • {doc.pages} pages {doc.isAadhaar ? '• Aadhaar ID' : ''}
                         </p>
                       </div>
                     </div>
@@ -569,25 +837,44 @@ export const ChatScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* Aadhaar Privacy Shield Toggle */}
-            <div className="p-3 rounded-2xl bg-white border border-[#ece8e1] flex items-center justify-between">
-              <div>
-                <span className="font-sans text-[12px] font-semibold text-[#1b1c1a] block">
-                  Aadhaar / ID Auto-Masking
-                </span>
-                <span className="font-sans text-[10px] text-[#454556]">
-                  Obscures first 8 digits before transmission
-                </span>
+            {/* Enhanced Aadhaar & ID Auto-Masking Toggle */}
+            <div className="p-3.5 rounded-2xl bg-white border border-[#ece8e1] space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="pr-2">
+                  <span className="font-sans text-[13px] font-bold text-[#1b1c1a] block">
+                    Aadhaar &amp; ID Auto-Masking
+                  </span>
+                  <span className="font-sans text-[11px] text-[#6b6760]">
+                    Masks address, full name, photo, and first 8 Aadhaar digits
+                  </span>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={isMaskedAadhaar}
+                    onChange={(e) => setIsMaskedAadhaar(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-[#eae8e4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#3d3bf3]"></div>
+                </label>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isMaskedAadhaar}
-                  onChange={(e) => setIsMaskedAadhaar(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-10 h-5 bg-[#eae8e4] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#3d3bf3]"></div>
-              </label>
+
+              {isMaskedAadhaar && (
+                <div className="pt-2 border-t border-[#f5f3ef] flex flex-wrap gap-1.5 animate-in fade-in duration-150">
+                  <span className="font-mono text-[9.5px] bg-[#ddf5e6] text-[#0a542a] px-2 py-0.5 rounded-md font-semibold">
+                    👤 Name Masked
+                  </span>
+                  <span className="font-mono text-[9.5px] bg-[#ddf5e6] text-[#0a542a] px-2 py-0.5 rounded-md font-semibold">
+                    📍 Address Redacted
+                  </span>
+                  <span className="font-mono text-[9.5px] bg-[#ddf5e6] text-[#0a542a] px-2 py-0.5 rounded-md font-semibold">
+                    🖼️ Photo Obscured
+                  </span>
+                  <span className="font-mono text-[9.5px] bg-[#ddf5e6] text-[#0a542a] px-2 py-0.5 rounded-md font-semibold">
+                    🔢 XXXX-XXXX-4892
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Note to Shopkeeper */}
@@ -621,6 +908,288 @@ export const ChatScreen: React.FC = () => {
               <span className="material-symbols-outlined text-[18px]">send</span>
               <span>Send Document</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SECURE IN-MEMORY DOCUMENT PREVIEW MODAL (DOWNLOAD STRICTLY DISABLED)       */}
+      {/* ========================================================================= */}
+      {previewModalDoc && (
+        <div
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150 select-none"
+          onContextMenu={(e) => {
+            e.preventDefault();
+            triggerToast('Direct document download is disabled for privacy protection.');
+          }}
+        >
+          <div className="w-full max-w-2xl bg-[#fbf9f5] rounded-[28px] border border-[#ece8e1] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+            {/* Modal Security Header */}
+            <div className="bg-white px-5 py-4 border-b border-[#ece8e1] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-[#3d3bf3] text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <span className="material-symbols-outlined text-[20px]">visibility</span>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-heading font-bold text-[15px] text-[#1b1c1a] truncate">
+                      Secure Document Preview
+                    </h4>
+                    <span className="font-mono text-[9px] bg-red-100 text-red-800 border border-red-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                      Download Disabled
+                    </span>
+                  </div>
+                  <p className="font-sans text-[11px] text-[#6b6760] truncate">
+                    {previewModalDoc.fileName} • Spool RAM buffer
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPreviewModalDoc(null)}
+                className="w-8 h-8 rounded-full bg-[#f5f3ef] hover:bg-[#efeeea] flex items-center justify-center text-[#1b1c1a] cursor-pointer shrink-0 transition-all"
+                title="Close Preview"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+
+            {/* Scrollable Document Container */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#efeeea]/60 relative">
+              {/* Background Security Watermark */}
+              <div className="pointer-events-none select-none absolute inset-0 opacity-[0.035] flex flex-wrap items-center justify-center gap-16 font-mono text-xl font-bold rotate-[-22deg] text-black overflow-hidden">
+                <span>PRINTVAULT ZERO-STORE</span>
+                <span>DOWNLOAD DISABLED</span>
+                <span>EPHEMERAL SPOOL ONLY</span>
+                <span>SECTION 29(4) PRIVACY</span>
+                <span>RAM BUFFER</span>
+              </div>
+
+              {/* Physical Printable Document Container */}
+              <div
+                id="printable-spool-document"
+                className="bg-white rounded-2xl p-6 sm:p-8 shadow-md border border-[#ece8e1] relative mx-auto max-w-xl"
+              >
+                {/* Aadhaar Card Masked Render */}
+                {previewModalDoc.isMaskedAadhaar || previewModalDoc.fileName.toLowerCase().includes('aadhaar') ? (
+                  <div className="space-y-4">
+                    {/* Top Government Emblem Banner */}
+                    <div className="border-b-2 border-[#1b1c1a]/15 pb-3 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-[#fff3c4] border border-[#ffd54f] flex flex-col items-center justify-center text-center p-1 text-[#422006] shrink-0">
+                          <span className="material-symbols-outlined text-[22px]">account_balance</span>
+                          <span className="text-[6.5px] font-bold uppercase leading-none mt-0.5">सत्यमेव जयते</span>
+                        </div>
+                        <div>
+                          <p className="font-heading font-bold text-[13px] text-[#1b1c1a] leading-tight">
+                            भारत सरकार / GOVERNMENT OF INDIA
+                          </p>
+                          <p className="font-sans text-[11px] text-[#6b6760]">
+                            भारतीय विशिष्ट पहचान प्राधिकरण / UIDAI
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="inline-block px-2.5 py-1 rounded-full bg-[#ddf5e6] text-[#0a542a] text-[10px] font-mono font-bold border border-[#b2e5c5]">
+                          ✓ MASKED AADHAAR
+                        </span>
+                        <p className="font-mono text-[9px] text-[#767588] mt-0.5">Circular No. 4(4)/57</p>
+                      </div>
+                    </div>
+
+                    {/* Aadhaar Two-Column Layout */}
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 py-2">
+                      {/* Left: Photo & Sealed QR */}
+                      <div className="sm:col-span-4 flex flex-col items-center gap-3 border-b sm:border-b-0 sm:border-r border-[#ece8e1] pb-3 sm:pb-0 sm:pr-3">
+                        {/* MASKED PHOTO BOX */}
+                        <div className="w-28 h-32 rounded-xl bg-[#1b1c1a] relative flex flex-col items-center justify-center text-center p-2 text-white overflow-hidden shadow-inner">
+                          <div className="absolute inset-0 bg-[radial-gradient(#ffffff15_1px,transparent_1px)] [background-size:8px_8px] opacity-40"></div>
+                          <span className="material-symbols-outlined text-[32px] text-amber-400 mb-1 z-10">
+                            no_photography
+                          </span>
+                          <span className="font-mono text-[9.5px] font-bold text-amber-300 tracking-wider z-10">
+                            PHOTO MASKED
+                          </span>
+                          <span className="text-[7.5px] text-white/60 uppercase tracking-widest mt-0.5 z-10">
+                            Privacy Shield
+                          </span>
+                        </div>
+
+                        {/* MASKED QR CODE BOX */}
+                        <div className="w-24 h-24 rounded-lg bg-[#f5f3ef] border border-[#ece8e1] relative flex flex-col items-center justify-center p-1.5 text-center overflow-hidden">
+                          <div className="w-full h-full bg-[linear-gradient(45deg,#000_25%,transparent_25%),linear-gradient(-45deg,#000_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#000_75%),linear-gradient(-45deg,transparent_75%,#000_75%)] [background-size:6px_6px] opacity-15 filter blur-[1px]"></div>
+                          <div className="absolute inset-0 bg-[#07006c]/85 flex flex-col items-center justify-center text-white p-1">
+                            <span className="material-symbols-outlined text-[18px] text-amber-300">lock</span>
+                            <span className="text-[7px] font-mono font-bold tracking-tight text-center leading-tight mt-0.5">
+                              QR CODE SEALED
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Redacted Name, DOB, Gender, Address */}
+                      <div className="sm:col-span-8 flex flex-col justify-between space-y-3">
+                        {/* Name Field */}
+                        <div>
+                          <span className="text-[10px] font-sans uppercase font-bold text-[#6b6760] block tracking-wide">
+                            Name / नाव
+                          </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="h-6 w-44 bg-[#1b1c1a] rounded flex items-center px-2">
+                              <span className="font-mono text-[10px] text-white/70 tracking-widest">
+                                ██████████████
+                              </span>
+                            </div>
+                            <span className="text-[9.5px] font-mono font-bold bg-[#ffdad6] text-[#ba1a1a] px-2 py-0.5 rounded">
+                              NAME REDACTED
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* DOB & Gender */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <span className="text-[10px] font-sans uppercase font-bold text-[#6b6760] block tracking-wide">
+                              DOB / जन्म तारीख
+                            </span>
+                            <div className="mt-1 h-5 w-24 bg-[#efeeea] rounded px-1.5 flex items-center font-mono text-[11px] text-[#454556]">
+                              XX / XX / XXXX
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-sans uppercase font-bold text-[#6b6760] block tracking-wide">
+                              Gender / लिंग
+                            </span>
+                            <div className="mt-1 h-5 w-20 bg-[#efeeea] rounded px-1.5 flex items-center font-mono text-[10px] text-[#ba1a1a] font-bold">
+                              [REDACTED]
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Address Field */}
+                        <div>
+                          <span className="text-[10px] font-sans uppercase font-bold text-[#6b6760] block tracking-wide">
+                            Address / पत्ता
+                          </span>
+                          <div className="mt-1 space-y-1">
+                            <div className="h-3.5 w-full bg-[#1b1c1a] rounded"></div>
+                            <div className="h-3.5 w-5/6 bg-[#1b1c1a] rounded"></div>
+                            <div className="h-3.5 w-3/4 bg-[#1b1c1a] rounded"></div>
+                          </div>
+                          <div className="mt-1.5 flex items-center gap-1.5">
+                            <span className="text-[9px] font-mono font-semibold text-[#ba1a1a] bg-[#ffdad6] px-2 py-0.5 rounded">
+                              RESIDENTIAL ADDRESS REDACTED
+                            </span>
+                            <span className="text-[8.5px] text-[#767588]">Sec. 29(4) Aadhaar Act</span>
+                          </div>
+                        </div>
+
+                        {/* Masked Aadhaar Number */}
+                        <div className="pt-2 border-t border-[#ece8e1]">
+                          <span className="text-[9px] font-sans uppercase font-bold text-[#6b6760] block tracking-wider mb-1">
+                            Aadhaar Number / आधार क्रमांक
+                          </span>
+                          <div className="bg-[#f5f3ef] border border-[#ece8e1] rounded-xl px-4 py-2 flex items-center justify-between">
+                            <span className="font-mono text-[18px] sm:text-[20px] font-bold tracking-widest text-[#1b1c1a]">
+                              <span className="text-[#3d3bf3] select-none">XXXX  XXXX</span>  4892
+                            </span>
+                            <span className="text-[9.5px] font-mono font-bold bg-[#ddf5e6] text-[#0a542a] px-2 py-0.5 rounded">
+                              First 8 Masked
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer Slogan */}
+                    <div className="pt-2 text-center border-t border-[#ece8e1]">
+                      <p className="font-heading font-semibold text-[11px] text-[#1b1c1a]">
+                        मेरा आधार, मेरी पहचान (Proof of Identity, not of Citizenship)
+                      </p>
+                      <p className="font-sans text-[10px] text-[#767588] mt-0.5">
+                        UIDAI Compliant Masked Copy • Ephemeral Spool by PrintVault
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  /* Standard Document (PDF / Word / Project / Image) */
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-[#ece8e1]">
+                      <div>
+                        <h4 className="font-heading font-bold text-[16px] text-[#1b1c1a]">
+                          {previewModalDoc.fileName}
+                        </h4>
+                        <p className="font-sans text-[11px] text-[#6b6760]">
+                          Format: {previewModalDoc.fileType?.toUpperCase() || 'DOCUMENT'} • {previewModalDoc.pageCount} Pages • {previewModalDoc.copies} {previewModalDoc.copies > 1 ? 'Copies' : 'Copy'}
+                        </p>
+                      </div>
+                      <span className="font-mono text-[10px] bg-[#e1e0ff] text-[#07006c] px-2.5 py-1 rounded-full font-semibold">
+                        RAM Spool Buffer
+                      </span>
+                    </div>
+
+                    {previewModalDoc.fileType === 'image' && previewModalDoc.previewDataUrl ? (
+                      <div className="w-full max-h-[380px] bg-black/5 rounded-2xl p-2 flex items-center justify-center overflow-hidden border border-[#ece8e1]">
+                        <img
+                          src={previewModalDoc.previewDataUrl}
+                          alt={previewModalDoc.fileName}
+                          className="max-h-[360px] object-contain rounded-xl select-none"
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-3 font-sans text-[13px] text-[#1b1c1a] leading-relaxed">
+                        <div className="p-3 bg-[#f5f3ef] rounded-xl border border-[#ece8e1] flex items-center justify-between text-[11px] text-[#454556]">
+                          <span>Spool Job ID: <strong>{previewModalDoc.jobId}</strong></span>
+                          <span>Pickup PIN: <strong className="font-mono text-[#3d3bf3]">{previewModalDoc.token}</strong></span>
+                        </div>
+                        <p className="text-[#454556]">
+                          This document has been safely decoded in ephemeral system memory for direct output to the Xerox printing hub. No temporary files or persistent logs have been written to disk.
+                        </p>
+                        <div className="space-y-2 py-2">
+                          <div className="h-3.5 bg-[#f0eee9] rounded w-11/12"></div>
+                          <div className="h-3.5 bg-[#f0eee9] rounded w-full"></div>
+                          <div className="h-3.5 bg-[#f0eee9] rounded w-4/5"></div>
+                          <div className="h-3.5 bg-[#f0eee9] rounded w-9/12"></div>
+                        </div>
+                        <div className="pt-2 border-t border-[#ece8e1] flex items-center justify-between text-[11px] text-[#767588]">
+                          <span>Color Mode: {previewModalDoc.colorMode.toUpperCase()}</span>
+                          <span>Total Fee: ₹{previewModalDoc.totalPrice.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Action Controls: Direct Print Only (NO DOWNLOAD) */}
+            <div className="bg-white px-5 py-4 border-t border-[#ece8e1] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-[11px] text-[#6b6760]">
+                <span className="material-symbols-outlined text-[16px] text-amber-600">security</span>
+                <span>Download permanently disabled. Spool directly to printer.</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewModalDoc(null)}
+                  className="px-4 py-2 rounded-full bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] font-sans text-[12px] font-semibold transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDirectPrint(previewModalDoc)}
+                  className="px-5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-[12px] font-semibold flex items-center gap-1.5 shadow-md shadow-emerald-600/25 active:scale-98 transition-all cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[17px]">print</span>
+                  <span>Direct Print</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

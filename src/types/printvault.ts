@@ -91,6 +91,15 @@ export interface ChatDocumentAttachment {
   note?: string;
   sentAt: string;
   expiresInSeconds: number;
+  fileType?: string;
+  previewDataUrl?: string;
+  maskedDetails?: {
+    name?: string;
+    aadhaarNumber?: string;
+    address?: string;
+    photoMasked?: boolean;
+    qrMasked?: boolean;
+  };
 }
 
 export interface ChatMessage {

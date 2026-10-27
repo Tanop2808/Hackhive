@@ -58,6 +58,15 @@ interface PrintVaultContextType {
     colorMode: 'bw' | 'color';
     isMaskedAadhaar: boolean;
     note?: string;
+    fileType?: string;
+    previewDataUrl?: string;
+    maskedDetails?: {
+      name?: string;
+      aadhaarNumber?: string;
+      address?: string;
+      photoMasked?: boolean;
+      qrMasked?: boolean;
+    };
   }) => void;
 
   // App Role & Shopkeeper Terminal
@@ -768,6 +777,15 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
     colorMode: 'bw' | 'color';
     isMaskedAadhaar: boolean;
     note?: string;
+    fileType?: string;
+    previewDataUrl?: string;
+    maskedDetails?: {
+      name?: string;
+      aadhaarNumber?: string;
+      address?: string;
+      photoMasked?: boolean;
+      qrMasked?: boolean;
+    };
   }) => {
     if (!activeChatSession) return;
     const shop = activeChatSession.shop;
@@ -792,6 +810,9 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
       note: docData.note,
       sentAt: currentTime,
       expiresInSeconds: 600,
+      fileType: docData.fileType,
+      previewDataUrl: docData.previewDataUrl,
+      maskedDetails: docData.maskedDetails,
     };
 
     const docMsg: import('@/types/printvault').ChatMessage = {

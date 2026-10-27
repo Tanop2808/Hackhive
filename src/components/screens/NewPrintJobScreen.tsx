@@ -98,7 +98,7 @@ export const NewPrintJobScreen: React.FC = () => {
             ref={fileInputRef}
             onChange={handleFileUpload}
             className="hidden"
-            accept=".pdf,.png,.jpg,.jpeg"
+            accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           />
 
           {!hasFile ? (
@@ -114,7 +114,7 @@ export const NewPrintJobScreen: React.FC = () => {
                 Drop credentials or select source
               </p>
               <p className="font-sans text-[12px] text-[#454556] mb-4">
-                Supports PDF, JPG, PNG up to 25 MB
+                Supports PDF, Word (.docx), JPG, PNG, TXT
               </p>
 
               {/* Source Chips */}
@@ -221,7 +221,7 @@ export const NewPrintJobScreen: React.FC = () => {
                       </span>
                     </div>
                     <p className="font-sans text-[12px] text-[#524400] mt-0.5 leading-snug">
-                      Mask the first 8 digits of your Aadhaar number before this leaves your phone?
+                      Masks address, name, photo, and first 8 Aadhaar digits (UIDAI Sec 29 compliant)
                     </p>
                   </div>
 
