@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { ScreenType, PrintJob, RecentPrintItem, PrintShop, ViewMode, Customer } from '@/types/printvault';
 import { initialActiveJob, mockRecentPrints, mockShops, userProfile } from '@/data/mockData';
+import { supabase } from '@/lib/supabase/client';
 
 interface PrintVaultContextType {
   currentScreen: ScreenType;
@@ -337,6 +338,235 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
   const [activeChatSession, setActiveChatSession] = useState<import('@/types/printvault').ChatSession | null>(null);
   const [isShopkeeperMode, setIsShopkeeperMode] = useState<boolean>(false);
 
+  // Real-time synchronization channels
+  const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
+  const supabaseChannelRef = useRef<any>(null);
+
+  // Audio notification chime via Web Audio API
+  const playNotificationChime = () => {
+    try {
+      if (typeof window === 'undefined') return;
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    } catch {}
+  };
+
+  // Broadcast real-time event across tabs, windows, and Supabase channel
+  const broadcastEvent = (payload: any) => {
+    // 1. Instant local cross-tab BroadcastChannel (<5ms)
+    try {
+      if (broadcastChannelRef.current) {
+        broadcastChannelRef.current.postMessage(payload);
+      }
+    } catch {}
+
+    // 2. Storage event fallback for cross-tab
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(
+          'printvault_realtime_event',
+          JSON.stringify({ ...payload, _t: Date.now() })
+        );
+        if (payload.session) {
+          localStorage.setItem('printvault_saved_chat_session', JSON.stringify(payload.session));
+        } else if (payload.type === 'REQUEST_DECLINED') {
+          localStorage.removeItem('printvault_saved_chat_session');
+        }
+      }
+    } catch {}
+
+    // 3. Supabase Realtime broadcast (WebSockets across devices and networks)
+    try {
+      if (supabaseChannelRef.current) {
+        supabaseChannelRef.current.send({
+          type: 'broadcast',
+          event: 'sync_event',
+          payload,
+        });
+      }
+    } catch {}
+
+    // 4. Server-side cache synchronization
+    if (payload.session) {
+      fetch('/api/chat/active', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session: payload.session }),
+      }).catch(() => {});
+    }
+  };
+
+  // Real-time message receiver handler
+  const handleRealtimePayload = (payload: any) => {
+    if (!payload || !payload.type) return;
+
+    switch (payload.type) {
+      case 'REQUEST_CREATED': {
+        const newSession = payload.session;
+        setActiveChatSession(newSession);
+        playNotificationChime();
+        triggerToast(`New print request from ${newSession.customer.name}!`);
+        break;
+      }
+
+      case 'REQUEST_ACCEPTED': {
+        const updatedSession = payload.session;
+        setActiveChatSession(updatedSession);
+        playNotificationChime();
+        setCurrentScreen('chat');
+        triggerToast('Request accepted! Chat is open.');
+        break;
+      }
+
+      case 'REQUEST_DECLINED': {
+        setActiveChatSession(payload.session || null);
+        triggerToast('Connection request was declined.');
+        break;
+      }
+
+      case 'NEW_MESSAGE': {
+        const msg = payload.message;
+        setActiveChatSession((prev) => {
+          if (!prev) return null;
+          if (prev.messages.some((m) => m.id === msg.id)) return prev;
+          return {
+            ...prev,
+            messages: [...prev.messages, msg],
+          };
+        });
+        break;
+      }
+
+      case 'NEW_DOCUMENT': {
+        const { docMsg, shopReply, activeJob: job } = payload;
+        if (job) {
+          setActiveJob(job);
+          setCountdown(600);
+        }
+        setActiveChatSession((prev) => {
+          if (!prev) return null;
+          const exists = prev.messages.some((m) => m.id === docMsg.id);
+          if (exists) return prev;
+          return {
+            ...prev,
+            messages: [...prev.messages, docMsg, ...(shopReply ? [shopReply] : [])],
+          };
+        });
+        playNotificationChime();
+        triggerToast('New document received for printing!');
+        break;
+      }
+    }
+  };
+
+  // Setup Real-time Listeners (BroadcastChannel, Storage Events, Supabase Realtime, and Server Polling)
+  useEffect(() => {
+    // Restore saved session from localStorage on initial load
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('printvault_saved_chat_session');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.requestId) {
+            setActiveChatSession(parsed);
+          }
+        }
+      } catch {}
+    }
+
+    // Initialize BroadcastChannel
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('printvault_realtime_sync');
+        bc.onmessage = (event) => {
+          handleRealtimePayload(event.data);
+        };
+        broadcastChannelRef.current = bc;
+      }
+    } catch (e) {
+      console.warn('BroadcastChannel initialization error:', e);
+    }
+
+    // Initialize window storage listener
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'printvault_realtime_event' && e.newValue) {
+        try {
+          const data = JSON.parse(e.newValue);
+          handleRealtimePayload(data);
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    // Initialize Supabase Realtime WebSocket channel
+    if (supabase) {
+      try {
+        const channel = supabase.channel('printvault_realtime_feed')
+          .on('broadcast', { event: 'sync_event' }, ({ payload }: any) => {
+            handleRealtimePayload(payload);
+          })
+          .subscribe();
+        supabaseChannelRef.current = channel;
+      } catch (err) {
+        console.warn('Supabase realtime error:', err);
+      }
+    }
+
+    // Fast server sync interval (every 1.5 seconds)
+    const pollServer = async () => {
+      try {
+        const res = await fetch('/api/chat/active');
+        const data = await res.json();
+        if (data?.success && data.session) {
+          setActiveChatSession((prev) => {
+            if (!prev) {
+              return data.session;
+            }
+            if (prev.requestId === data.session.requestId) {
+              const hasStatusChanged = prev.status !== data.session.status;
+              const hasMoreMessages = (data.session.messages?.length || 0) > (prev.messages?.length || 0);
+
+              if (hasStatusChanged || hasMoreMessages) {
+                if (hasStatusChanged && data.session.status === 'accepted' && prev.status === 'pending') {
+                  playNotificationChime();
+                  setCurrentScreen('chat');
+                  triggerToast('Request accepted! Chat is open.');
+                }
+                return data.session;
+              }
+            }
+            return prev;
+          });
+        }
+      } catch {}
+    };
+
+    const pollInterval = setInterval(pollServer, 1500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      if (broadcastChannelRef.current) {
+        broadcastChannelRef.current.close();
+      }
+      if (supabase && supabaseChannelRef.current) {
+        supabase.removeChannel(supabaseChannelRef.current);
+      }
+      clearInterval(pollInterval);
+    };
+  }, []);
+
   const fetchUserLocation = async () => {
     setIsFetchingLocation(true);
     triggerToast('Acquiring GPS coordinates & scanning 1km radius...');
@@ -355,7 +585,6 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
           triggerToast('📍 Location locked: 4 nearby Xerox stores found');
         },
         () => {
-          // Fallback to Bengaluru Central Xerox Cluster
           const fallbackLoc: import('@/types/printvault').UserLocation = {
             latitude: 12.9716,
             longitude: 77.5946,
@@ -390,7 +619,7 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
       age: 23,
       email: userProfile.email,
       avatarUrl: userProfile.avatar,
-      vaultTier: 'Hardware Enclave Tier 4',
+      vaultTier: 'Verified Customer',
     };
 
     const newSession: import('@/types/printvault').ChatSession = {
@@ -405,6 +634,9 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
     setActiveChatSession(newSession);
     setCurrentScreen('chat');
     triggerToast(`Connection request dispatched to ${shop.name}`);
+
+    // Broadcast in real-time across tabs and devices
+    broadcastEvent({ type: 'REQUEST_CREATED', session: newSession });
 
     // Persist to backend /api/chat/request
     fetch('/api/chat/request', {
@@ -430,8 +662,8 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
       id: `msg-sys-${Date.now()}`,
       requestId: activeChatSession.requestId,
       senderRole: 'system',
-      senderName: 'PrintVault Security Enclave',
-      text: `🔒 Ephemeral Encrypted Channel established between ${activeChatSession.customer.name} and ${activeChatSession.shop.name} (${operator})`,
+      senderName: 'PrintVault Secure Line',
+      text: `Chat established between ${activeChatSession.customer.name} and ${activeChatSession.shop.name} (${operator})`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
@@ -440,20 +672,22 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
       requestId: activeChatSession.requestId,
       senderRole: 'shopkeeper',
       senderName: `${activeChatSession.shop.name} (${operator})`,
-      text: `Hello ${customerFirstName}! Welcome to ${activeChatSession.shop.name}. Our high-speed ${activeChatSession.shop.printerModel || 'laser printer'} is online and warm. Please tap "Send Document" to transfer your file securely.`,
+      text: `Hello ${customerFirstName}! Welcome to ${activeChatSession.shop.name}. Our printer is ready. Please tap "Send Document" to transfer your file securely.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setActiveChatSession((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        status: 'accepted',
-        messages: [...prev.messages, systemMsg, shopkeeperWelcome],
-      };
-    });
+    const updatedSession: import('@/types/printvault').ChatSession = {
+      ...activeChatSession,
+      status: 'accepted',
+      messages: [...activeChatSession.messages, systemMsg, shopkeeperWelcome],
+    };
 
+    setActiveChatSession(updatedSession);
+    setCurrentScreen('chat');
     triggerToast(`Request accepted! Secure chat session active.`);
+
+    // Broadcast in real-time across tabs and devices!
+    broadcastEvent({ type: 'REQUEST_ACCEPTED', session: updatedSession });
 
     fetch(`/api/chat/request/${encodeURIComponent(activeChatSession.requestId)}`, {
       method: 'PATCH',
@@ -473,16 +707,17 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setActiveChatSession((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        status: 'declined',
-        messages: [...prev.messages, systemMsg],
-      };
-    });
+    const declinedSession: import('@/types/printvault').ChatSession = {
+      ...activeChatSession,
+      status: 'declined',
+      messages: [...activeChatSession.messages, systemMsg],
+    };
 
+    setActiveChatSession(declinedSession);
     triggerToast(`Connection request was declined.`);
+
+    // Broadcast in real-time
+    broadcastEvent({ type: 'REQUEST_DECLINED', session: declinedSession });
 
     fetch(`/api/chat/request/${encodeURIComponent(activeChatSession.requestId)}`, {
       method: 'PATCH',
@@ -493,16 +728,30 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
 
   const sendChatMessage = (text: string) => {
     if (!activeChatSession || !text.trim()) return;
+    const role = isShopkeeperMode || currentScreen === 'shopkeeper_dashboard' ? 'shopkeeper' : 'customer';
+    const senderName =
+      role === 'shopkeeper'
+        ? `${activeChatSession.shop.name} (${activeChatSession.shop.operatorName || 'Operator'})`
+        : activeChatSession.customer.name;
+
     const custMsg: import('@/types/printvault').ChatMessage = {
-      id: `msg-cust-${Date.now()}`,
+      id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       requestId: activeChatSession.requestId,
-      senderRole: 'customer',
-      senderName: activeChatSession.customer.name,
+      senderRole: role,
+      senderName,
       text: text.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setActiveChatSession((prev) => (prev ? { ...prev, messages: [...prev.messages, custMsg] } : null));
+    const updatedSession = {
+      ...activeChatSession,
+      messages: [...activeChatSession.messages, custMsg],
+    };
+
+    setActiveChatSession(updatedSession);
+
+    // Broadcast in real-time!
+    broadcastEvent({ type: 'NEW_MESSAGE', message: custMsg, session: updatedSession });
 
     fetch(`/api/chat/${encodeURIComponent(activeChatSession.requestId)}/messages`, {
       method: 'POST',
@@ -583,19 +832,26 @@ export function PrintVaultProvider({ children }: { children: React.ReactNode }) 
       requestId: activeChatSession.requestId,
       senderRole: 'shopkeeper',
       senderName: `${shop.name} (${shop.operatorName || 'Operator'})`,
-      text: `Document "${docData.fileName}" received into encrypted RAM buffer! Token ${formattedToken} verified. Spooling ${docData.copies} ${docData.copies > 1 ? 'copies' : 'copy'} in ${docData.colorMode === 'bw' ? 'B&W' : 'Color'} now. Total: ₹${totalPrice}. Spooler will shred volatile memory post-print.`,
+      text: `Document "${docData.fileName}" received! Token PIN ${formattedToken} confirmed. Printing ${docData.copies} ${docData.copies > 1 ? 'copies' : 'copy'} in ${docData.colorMode === 'bw' ? 'B&W' : 'Color'}. Total: ₹${totalPrice}.`,
       timestamp: currentTime,
     };
 
-    setActiveChatSession((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        messages: [...prev.messages, docMsg, shopReply],
-      };
-    });
+    const updatedSession = {
+      ...activeChatSession,
+      messages: [...activeChatSession.messages, docMsg, shopReply],
+    };
 
+    setActiveChatSession(updatedSession);
     triggerToast(`Document sent to ${shop.name} printer`);
+
+    // Broadcast in real-time across tabs and devices!
+    broadcastEvent({
+      type: 'NEW_DOCUMENT',
+      docMsg,
+      shopReply,
+      activeJob: newJob,
+      session: updatedSession,
+    });
   };
 
   const shopkeeperSignIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
