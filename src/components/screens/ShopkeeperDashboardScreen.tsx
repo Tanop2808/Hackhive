@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { usePrintVault } from '@/context/PrintVaultContext';
 import { ChatDocumentAttachment } from '@/types/printvault';
 import { SecureDocumentPreviewModal } from '@/components/common/SecureDocumentPreviewModal';
+import { ConfirmPrintModal } from '@/components/common/ConfirmPrintModal';
 
 export const ShopkeeperDashboardScreen: React.FC = () => {
   const {
@@ -13,6 +14,7 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
     acceptChatRequest,
     declineChatRequest,
     sendDocumentInChat,
+    sendChatMessage,
     activeJob,
     setCurrentScreen,
     setAppRole,
@@ -21,6 +23,8 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
   } = usePrintVault();
 
   const [previewDoc, setPreviewDoc] = useState<ChatDocumentAttachment | null>(null);
+  const [confirmModalDoc, setConfirmModalDoc] = useState<ChatDocumentAttachment | null>(null);
+  const [confirmedTokens, setConfirmedTokens] = useState<Record<string, boolean>>({});
 
   const shopName = currentShopkeeper?.shopName || 'QuickPrint Corner & Xerox';
   const operatorName = currentShopkeeper?.operatorName || 'Mohan Kumar';
@@ -78,13 +82,26 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
   ];
 
   const handleDirectPrint = (doc: ChatDocumentAttachment) => {
-    setPreviewDoc(doc);
     triggerToast(`Spooling "${doc.fileName}" directly to ${printerModel}...`);
     setTimeout(() => {
       if (typeof window !== 'undefined') {
         window.print();
       }
     }, 400);
+  };
+
+  const handleConfirmAndAddPrint = () => {
+    if (!confirmModalDoc) return;
+    const doc = confirmModalDoc;
+    setConfirmedTokens((prev) => ({ ...prev, [doc.token]: true }));
+    setConfirmModalDoc(null);
+    triggerToast(`Added "${doc.fileName}" to print queue! Spooling to ${printerModel}...`);
+    sendChatMessage(`Document "${doc.fileName}" confirmed and added to the printer queue. Printing now!`);
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.print();
+      }
+    }, 300);
   };
 
   const simulateIncomingRequest = () => {
@@ -454,39 +471,44 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Shopkeeper Action Controls */}
+                  {/* Shopkeeper Action Controls: Direct Confirm the Print Only */}
                   <div className="space-y-2 pt-1">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      {/* Preview Masked Document */}
-                      <button
-                        type="button"
-                        onClick={() => setPreviewDoc(doc)}
-                        className="py-2.5 px-3 rounded-2xl bg-[#3d3bf3] hover:bg-[#2e2cd4] text-white font-sans text-[12px] font-semibold flex items-center justify-center gap-1.5 shadow-sm active:scale-98 transition-all cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[17px]">visibility</span>
-                        <span>Preview Document</span>
-                      </button>
+                    {confirmedTokens[doc.token] ? (
+                      <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-800 text-[12px] font-semibold">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[19px] text-emerald-600">check_circle</span>
+                          <span>Added to Print Queue • Spooled to {printerModel.split(' ')[0]}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmModalDoc(doc)}
+                          className="px-3 py-1 bg-white border border-emerald-300 rounded-lg text-[#3d3bf3] hover:bg-emerald-100 text-[11px] font-bold cursor-pointer"
+                        >
+                          Reprint
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          id={`confirm-print-${index}`}
+                          onClick={() => setConfirmModalDoc(doc)}
+                          className="flex-1 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-[13px] font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 active:scale-98 transition-all cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[19px]">print</span>
+                          <span>Confirm the Print</span>
+                        </button>
 
-                      {/* Direct Print to Hardware Printer */}
-                      <button
-                        type="button"
-                        onClick={() => handleDirectPrint(doc)}
-                        className="py-2.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-[12px] font-semibold flex items-center justify-center gap-1.5 shadow-sm active:scale-98 transition-all cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[17px]">print</span>
-                        <span>Direct Print</span>
-                      </button>
-
-                      {/* Open Chat with Customer */}
-                      <button
-                        type="button"
-                        onClick={() => setCurrentScreen('chat')}
-                        className="py-2.5 px-3 rounded-2xl bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] font-sans text-[12px] font-semibold flex items-center justify-center gap-1.5 border border-[#ece8e1] active:scale-98 transition-all cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-[17px]">chat</span>
-                        <span>Open Chat</span>
-                      </button>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentScreen('chat')}
+                          className="px-4 py-3 rounded-2xl bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] font-sans text-[12px] font-semibold flex items-center justify-center gap-1.5 border border-[#ece8e1] active:scale-98 transition-all cursor-pointer shrink-0"
+                        >
+                          <span className="material-symbols-outlined text-[17px]">chat</span>
+                          <span>Open Chat</span>
+                        </button>
+                      </div>
+                    )}
 
                     {/* Security Notice: Download Blocked */}
                     <div className="bg-[#fff3c4] border border-[#ffe082] rounded-xl px-3 py-1.5 flex items-center gap-2 text-[10.5px] text-[#5d4037] font-sans font-medium">
@@ -593,6 +615,18 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
         onPrint={handleDirectPrint}
         shopName={shopName}
         triggerToast={triggerToast}
+      />
+
+      {/* Confirm Print Confirmation Modal */}
+      <ConfirmPrintModal
+        isOpen={!!confirmModalDoc}
+        doc={confirmModalDoc}
+        customerName={
+          allReceivedDocs.find((d) => d.document.token === confirmModalDoc?.token)?.customerName || 'Customer'
+        }
+        printerModel={printerModel}
+        onConfirm={handleConfirmAndAddPrint}
+        onCancel={() => setConfirmModalDoc(null)}
       />
     </div>
   );

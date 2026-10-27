@@ -533,7 +533,7 @@ export const SecureDocumentPreviewModal: React.FC<SecureDocumentPreviewModalProp
               className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-[13px] font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 active:scale-98 transition-all cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">print</span>
-              <span>Direct Print (Canon Laser)</span>
+              <span>Confirm the Print</span>
             </button>
           </div>
         </div>
