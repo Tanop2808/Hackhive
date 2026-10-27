@@ -1,7 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { usePrintVault } from '@/context/PrintVaultContext';
+import { ChatDocumentAttachment } from '@/types/printvault';
+import { SecureDocumentPreviewModal } from '@/components/common/SecureDocumentPreviewModal';
 
 export const ShopkeeperDashboardScreen: React.FC = () => {
   const {
@@ -10,11 +12,15 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
     activeChatSession,
     acceptChatRequest,
     declineChatRequest,
+    sendDocumentInChat,
+    activeJob,
     setCurrentScreen,
     setAppRole,
     triggerToast,
     initiateChatWithShop,
   } = usePrintVault();
+
+  const [previewDoc, setPreviewDoc] = useState<ChatDocumentAttachment | null>(null);
 
   const shopName = currentShopkeeper?.shopName || 'QuickPrint Corner & Xerox';
   const operatorName = currentShopkeeper?.operatorName || 'Mohan Kumar';
@@ -23,6 +29,63 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
   // Check if there is an active session for this shop
   const hasPendingRequest = activeChatSession && activeChatSession.status === 'pending';
   const hasAcceptedChat = activeChatSession && activeChatSession.status === 'accepted';
+
+  // Collect all documents received from customer chat messages
+  const chatDocuments = (activeChatSession?.messages || [])
+    .filter((m) => !!m.document)
+    .map((m) => ({
+      document: m.document!,
+      customerName: m.senderRole === 'customer' ? m.senderName : (activeChatSession?.customer.name || 'Customer'),
+      timestamp: m.timestamp,
+      instruction: m.document?.note,
+    }));
+
+  // If activeJob exists and isn't already in chatDocuments, make it available
+  const activeJobDoc: ChatDocumentAttachment | null = activeJob
+    ? {
+        fileName: activeJob.fileName,
+        fileSize: activeJob.fileSize,
+        pageCount: activeJob.pageCount,
+        copies: activeJob.copies,
+        colorMode: activeJob.colorMode,
+        isMaskedAadhaar: activeJob.isMaskedAadhaar ?? true,
+        token: activeJob.token,
+        jobId: activeJob.id,
+        totalPrice: activeJob.totalPrice,
+        sentAt: activeJob.createdAt,
+        expiresInSeconds: activeJob.expiresInSeconds,
+        fileType: activeJob.fileName.endsWith('.pdf') ? 'pdf' : 'doc',
+        maskedDetails: {
+          name: 'Tanishq Mudaliyar',
+          aadhaarNumber: 'XXXX-XXXX-4892',
+          address: 'Section 29(4) Aadhaar Act Masked Residential Details',
+          photoMasked: true,
+          qrMasked: true,
+        },
+      }
+    : null;
+
+  const allReceivedDocs = [
+    ...chatDocuments,
+    ...(activeJobDoc && !chatDocuments.some((c) => c.document.token === activeJobDoc.token)
+      ? [{
+          document: activeJobDoc,
+          customerName: 'Tanishq Mudaliyar',
+          timestamp: activeJobDoc.sentAt,
+          instruction: 'PrintVault Spool via PIN verification',
+        }]
+      : []),
+  ];
+
+  const handleDirectPrint = (doc: ChatDocumentAttachment) => {
+    setPreviewDoc(doc);
+    triggerToast(`Spooling "${doc.fileName}" directly to ${printerModel}...`);
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.print();
+      }
+    }, 400);
+  };
 
   const simulateIncomingRequest = () => {
     // If no active session, initiate one from Tanishq Mudaliyar
@@ -48,6 +111,52 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
     } else {
       triggerToast('A request or chat session is already active!');
     }
+  };
+
+  const simulateIncomingDocument = () => {
+    if (!activeChatSession) {
+      initiateChatWithShop({
+        id: currentShopkeeper?.shopId || 'shop-1',
+        name: shopName,
+        distance: '120m away',
+        location: currentShopkeeper?.location || 'MG Road, Bengaluru',
+        rating: 4.9,
+        jobsCount: '340+ jobs today',
+        statusBadge: 'Ready to pick',
+        image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=300&q=80',
+        lat: 12.9723,
+        lng: 77.5952,
+        operatorName,
+        pricePerBw: 2.0,
+        pricePerColor: 5.0,
+        printerModel,
+        isOnline: true,
+      });
+      acceptChatRequest();
+    } else if (activeChatSession.status === 'pending') {
+      acceptChatRequest();
+    }
+
+    setTimeout(() => {
+      sendDocumentInChat({
+        fileName: 'e-Aadhaar_Card_Tanishq.pdf',
+        fileSize: '1.4 MB',
+        pageCount: 2,
+        copies: 2,
+        colorMode: 'bw',
+        isMaskedAadhaar: true,
+        note: 'Please print duplex back-to-back, staple top left',
+        fileType: 'pdf',
+        maskedDetails: {
+          name: 'Tanishq Mudaliyar',
+          aadhaarNumber: 'XXXX-XXXX-4892',
+          address: 'Section 29(4) Aadhaar Act Masked Residential Details',
+          photoMasked: true,
+          qrMasked: true,
+        },
+      });
+      triggerToast('Document received in print queue: e-Aadhaar_Card_Tanishq.pdf');
+    }, 150);
   };
 
   return (
@@ -93,18 +202,26 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
         </div>
 
         {/* Real-time stats */}
-        <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-white/15 text-center">
+        <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/15 text-center">
           <div>
             <span className="font-sans text-[10px] text-white/70 block uppercase tracking-wider">
               Jobs Today
             </span>
-            <span className="font-mono text-[20px] font-bold text-white">42</span>
+            <span className="font-mono text-[19px] font-bold text-white">42</span>
+          </div>
+          <div>
+            <span className="font-sans text-[10px] text-white/70 block uppercase tracking-wider">
+              Ready in RAM
+            </span>
+            <span className="font-mono text-[19px] font-bold text-amber-300">
+              {allReceivedDocs.length}
+            </span>
           </div>
           <div>
             <span className="font-sans text-[10px] text-white/70 block uppercase tracking-wide">
-              Today&apos;s Revenue
+              Revenue
             </span>
-            <span className="font-mono text-[20px] font-bold text-emerald-300">₹1,280</span>
+            <span className="font-mono text-[19px] font-bold text-emerald-300">₹1,280</span>
           </div>
         </div>
       </div>
@@ -216,7 +333,197 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
         )}
       </section>
 
-      {/* SECTION 2: ACTIVE CUSTOMER CHAT ROOMS */}
+      {/* SECTION 2: RECEIVED PRINT DOCUMENTS & LIVE SPOOL QUEUE */}
+      <section className="mb-6 space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <h3 className="font-heading font-bold text-[17px] text-[#1b1c1a] tracking-tight">
+              Received Documents to Print
+            </h3>
+            {allReceivedDocs.length > 0 && (
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            )}
+          </div>
+          <span className="font-mono text-[11px] font-semibold bg-[#ddf5e6] text-[#0a542a] px-2.5 py-0.5 rounded-full border border-[#b2e5c5]">
+            {allReceivedDocs.length} {allReceivedDocs.length === 1 ? 'Doc Ready' : 'Docs Ready'}
+          </span>
+        </div>
+
+        {allReceivedDocs.length > 0 ? (
+          <div className="space-y-3">
+            {allReceivedDocs.map((item, index) => {
+              const doc = item.document;
+              const isAadhaar =
+                doc.isMaskedAadhaar ||
+                doc.fileName.toLowerCase().includes('aadhaar') ||
+                doc.fileName.toLowerCase().includes('aadhar');
+
+              return (
+                <div
+                  key={`${doc.token}-${index}`}
+                  className="p-5 rounded-3xl bg-white border-2 border-[#3d3bf3]/30 shadow-md space-y-4 hover:border-[#3d3bf3] transition-all animate-in fade-in duration-200"
+                >
+                  {/* Top Row: File icon, Title, Token, Status */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-12 h-12 rounded-2xl bg-[#e1e0ff] text-[#3d3bf3] flex items-center justify-center shrink-0 shadow-xs">
+                        <span className="material-symbols-outlined text-[24px]">
+                          {doc.fileType === 'doc'
+                            ? 'article'
+                            : doc.fileType === 'image'
+                            ? 'image'
+                            : 'picture_as_pdf'}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-heading font-bold text-[15px] text-[#1b1c1a] truncate">
+                            {doc.fileName}
+                          </h4>
+                          <span className="font-mono text-[9px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold uppercase shrink-0">
+                            RAM SPOOL
+                          </span>
+                        </div>
+                        <p className="font-sans text-[12px] text-[#454556] mt-0.5">
+                          From <strong className="text-[#1b1c1a]">{item.customerName}</strong> • {item.timestamp}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="font-sans text-[9px] uppercase tracking-wide text-[#767588] block">
+                        PICKUP PIN
+                      </span>
+                      <span className="font-mono text-[16px] font-bold text-[#3d3bf3]">
+                        {doc.token}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Print Specs & Fee */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-sans">
+                    <div className="p-2.5 bg-[#fbf9f5] rounded-xl border border-[#ece8e1]">
+                      <span className="text-[#767588] block text-[10px]">PAGES &amp; COPIES</span>
+                      <span className="font-semibold text-[#1b1c1a] mt-0.5 block">
+                        {doc.pageCount} pgs • {doc.copies} {doc.copies > 1 ? 'copies' : 'copy'}
+                      </span>
+                    </div>
+                    <div className="p-2.5 bg-[#fbf9f5] rounded-xl border border-[#ece8e1]">
+                      <span className="text-[#767588] block text-[10px]">COLOR MODE</span>
+                      <span className="font-semibold text-[#1b1c1a] mt-0.5 block">
+                        {doc.colorMode === 'bw' ? 'Black & White' : 'Color'}
+                      </span>
+                    </div>
+                    <div className="p-2.5 bg-[#fbf9f5] rounded-xl border border-[#ece8e1]">
+                      <span className="text-[#767588] block text-[10px]">TOTAL FEE</span>
+                      <span className="font-mono font-bold text-[#0a542a] mt-0.5 block">
+                        ₹{doc.totalPrice.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="p-2.5 bg-[#fbf9f5] rounded-xl border border-[#ece8e1]">
+                      <span className="text-[#767588] block text-[10px]">STORAGE STATE</span>
+                      <span className="font-semibold text-[#3d3bf3] mt-0.5 block">
+                        Zero Disk Write
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Privacy Badge: Aadhaar Masked Indicator */}
+                  {isAadhaar ? (
+                    <div className="bg-[#ddf5e6] text-[#0a542a] px-3.5 py-2 rounded-2xl text-[11px] font-mono font-semibold flex items-center justify-between border border-[#b2e5c5]">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[16px]">verified_user</span>
+                        <span>Aadhaar Masked (Photo, Name, Address &amp; Number Redacted)</span>
+                      </div>
+                      <span className="text-[10px] bg-white/70 px-2 py-0.5 rounded-full font-bold">
+                        UIDAI Sec 29
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="bg-[#f5f3ef] text-[#454556] px-3 py-1.5 rounded-2xl text-[11px] font-sans flex items-center gap-1.5 border border-[#ece8e1]">
+                      <span className="material-symbols-outlined text-[15px] text-[#3d3bf3]">lock</span>
+                      <span>Decoded in volatile RAM buffer • Discarded upon completion</span>
+                    </div>
+                  )}
+
+                  {/* Customer Instructions / Note */}
+                  {item.instruction && (
+                    <div className="p-2.5 bg-[#fff8e1] rounded-xl border border-[#ffe082] text-[11px] font-sans text-[#5d4037] flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[16px] text-amber-700">edit_note</span>
+                      <span>Customer Note: <strong>&ldquo;{item.instruction}&rdquo;</strong></span>
+                    </div>
+                  )}
+
+                  {/* Shopkeeper Action Controls */}
+                  <div className="space-y-2 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {/* Preview Masked Document */}
+                      <button
+                        type="button"
+                        onClick={() => setPreviewDoc(doc)}
+                        className="py-2.5 px-3 rounded-2xl bg-[#3d3bf3] hover:bg-[#2e2cd4] text-white font-sans text-[12px] font-semibold flex items-center justify-center gap-1.5 shadow-sm active:scale-98 transition-all cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[17px]">visibility</span>
+                        <span>Preview Document</span>
+                      </button>
+
+                      {/* Direct Print to Hardware Printer */}
+                      <button
+                        type="button"
+                        onClick={() => handleDirectPrint(doc)}
+                        className="py-2.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-[12px] font-semibold flex items-center justify-center gap-1.5 shadow-sm active:scale-98 transition-all cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[17px]">print</span>
+                        <span>Direct Print</span>
+                      </button>
+
+                      {/* Open Chat with Customer */}
+                      <button
+                        type="button"
+                        onClick={() => setCurrentScreen('chat')}
+                        className="py-2.5 px-3 rounded-2xl bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] font-sans text-[12px] font-semibold flex items-center justify-center gap-1.5 border border-[#ece8e1] active:scale-98 transition-all cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[17px]">chat</span>
+                        <span>Open Chat</span>
+                      </button>
+                    </div>
+
+                    {/* Security Notice: Download Blocked */}
+                    <div className="bg-[#fff3c4] border border-[#ffe082] rounded-xl px-3 py-1.5 flex items-center gap-2 text-[10.5px] text-[#5d4037] font-sans font-medium">
+                      <span className="material-symbols-outlined text-[15px] text-[#e65100]">block</span>
+                      <span>Direct file download is permanently disabled for customer privacy. Print directly to hardware.</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* Empty Queue State with Simulation Option */
+          <div className="p-6 rounded-3xl bg-white border border-[#ece8e1] shadow-xs text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#f5f3ef] text-[#767588] flex items-center justify-center mx-auto">
+              <span className="material-symbols-outlined text-[24px]">description</span>
+            </div>
+            <h4 className="font-heading font-semibold text-[15px] text-[#1b1c1a]">
+              No Documents in Print Queue
+            </h4>
+            <p className="font-sans text-[12px] text-[#6b6760] max-w-[320px] mx-auto leading-relaxed">
+              When customers send print files in chat, they will arrive here instantly in RAM for masked preview and direct hardware printing.
+            </p>
+
+            <button
+              type="button"
+              onClick={simulateIncomingDocument}
+              className="mt-1 px-4 py-2.5 rounded-full bg-[#3d3bf3] hover:bg-[#2e2cd4] text-white font-sans text-[12px] font-semibold transition-all inline-flex items-center gap-2 shadow-xs cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[16px]">upload_file</span>
+              <span>Simulate Customer Sending e-Aadhaar</span>
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* SECTION 3: ACTIVE CUSTOMER CHAT SESSIONS */}
       <section className="mb-6 space-y-3">
         <div className="flex items-center justify-between px-1">
           <h3 className="font-heading font-bold text-[17px] text-[#1b1c1a] tracking-tight">
@@ -259,7 +566,7 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
           </div>
         ) : (
           <div className="p-4 rounded-2xl bg-[#f5f3ef] border border-[#ece8e1] text-center text-[#767588] text-[12px]">
-            Accepted requests will establish a direct ephemeral chat here where customer documents are received and printed.
+            Accepted requests establish a direct ephemeral chat where customer documents are received and printed.
           </div>
         )}
       </section>
@@ -278,6 +585,15 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
           <span>Switch back to Customer Portal</span>
         </button>
       </div>
+
+      {/* Secure In-Memory Document Preview Modal */}
+      <SecureDocumentPreviewModal
+        doc={previewDoc}
+        onClose={() => setPreviewDoc(null)}
+        onPrint={handleDirectPrint}
+        shopName={shopName}
+        triggerToast={triggerToast}
+      />
     </div>
   );
 };

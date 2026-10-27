@@ -158,6 +158,8 @@
   #printable-spool-document,
   #printable-spool-document * {
     visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   #printable-spool-document {
     position: fixed !important;
@@ -166,9 +168,11 @@
     width: 100% !important;
     height: auto !important;
     margin: 0 !important;
-    padding: 24px !important;
+    padding: 16px !important;
     background: white !important;
     box-shadow: none !important;
     border: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
