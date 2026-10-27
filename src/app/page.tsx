@@ -5,7 +5,6 @@ import { PrintVaultProvider, usePrintVault } from '@/context/PrintVaultContext';
 import { Header } from '@/components/common/Header';
 import { BottomNav } from '@/components/common/BottomNav';
 import { Toast } from '@/components/common/Toast';
-import { ViewModeSwitcher } from '@/components/common/ViewModeSwitcher';
 import { HomeScreen } from '@/components/screens/HomeScreen';
 import { NewPrintJobScreen } from '@/components/screens/NewPrintJobScreen';
 import { ShopLinkQrScreen } from '@/components/screens/ShopLinkQrScreen';
@@ -151,9 +150,6 @@ function MainAppShell() {
 
   return (
     <>
-      {/* View Mode Switcher Pill */}
-      <ViewModeSwitcher />
-
       {/* Global Floating Toast */}
       <Toast />
 
