@@ -43,7 +43,7 @@ export const ConfirmPrintModal: React.FC<ConfirmPrintModalProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-heading font-bold text-[18px] text-[#1b1c1a] leading-tight">
-              Confirm the Print
+              Confirm Print
             </h3>
             <p className="font-sans text-[12px] text-[#6b6760] mt-0.5">
               Spool directly to <strong>{printerModel}</strong>
@@ -53,7 +53,7 @@ export const ConfirmPrintModal: React.FC<ConfirmPrintModalProps> = ({
             type="button"
             onClick={onCancel}
             className="w-8 h-8 rounded-full bg-[#f5f3ef] hover:bg-[#efeeea] flex items-center justify-center text-[#1b1c1a] cursor-pointer shrink-0 transition-all"
-            title="Cancel"
+            title="Close"
           >
             <span className="material-symbols-outlined text-[18px]">close</span>
           </button>
@@ -124,14 +124,16 @@ export const ConfirmPrintModal: React.FC<ConfirmPrintModalProps> = ({
           </p>
         </div>
 
-        {/* Modal Action Buttons: Cancel and Yes */}
+        {/* Modal Action Buttons: No and Yes */}
         <div className="grid grid-cols-2 gap-3 pt-1">
           <button
             type="button"
+            id="confirm-print-no-btn"
             onClick={onCancel}
-            className="w-full h-12 rounded-2xl bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] font-sans text-[13px] font-semibold transition-all cursor-pointer border border-[#ece8e1] flex items-center justify-center active:scale-98"
+            className="w-full h-12 rounded-2xl bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] font-sans text-[14px] font-semibold transition-all cursor-pointer border border-[#ece8e1] flex items-center justify-center gap-1.5 active:scale-98"
           >
-            Cancel
+            <span className="material-symbols-outlined text-[18px]">close</span>
+            <span>No</span>
           </button>
 
           <button

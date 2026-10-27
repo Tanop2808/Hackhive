@@ -82,12 +82,8 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
   ];
 
   const handleDirectPrint = (doc: ChatDocumentAttachment) => {
-    triggerToast(`Spooling "${doc.fileName}" directly to ${printerModel}...`);
-    setTimeout(() => {
-      if (typeof window !== 'undefined') {
-        window.print();
-      }
-    }, 400);
+    setPreviewDoc(null);
+    setConfirmModalDoc(doc);
   };
 
   const handleConfirmAndAddPrint = () => {
@@ -95,13 +91,8 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
     const doc = confirmModalDoc;
     setConfirmedTokens((prev) => ({ ...prev, [doc.token]: true }));
     setConfirmModalDoc(null);
-    triggerToast(`Added "${doc.fileName}" to print queue! Spooling to ${printerModel}...`);
+    triggerToast(`Added "${doc.fileName}" to print queue! Spooled to ${printerModel}...`);
     sendChatMessage(`Document "${doc.fileName}" confirmed and added to the printer queue. Printing now!`);
-    setTimeout(() => {
-      if (typeof window !== 'undefined') {
-        window.print();
-      }
-    }, 300);
   };
 
   const simulateIncomingRequest = () => {
@@ -496,7 +487,7 @@ export const ShopkeeperDashboardScreen: React.FC = () => {
                           className="flex-1 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-[13px] font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 active:scale-98 transition-all cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-[19px]">print</span>
-                          <span>Confirm the Print</span>
+                          <span>Confirm Print</span>
                         </button>
 
                         <button
