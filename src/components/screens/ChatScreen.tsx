@@ -150,63 +150,101 @@ export const ChatScreen: React.FC = () => {
         </div>
       </div>
 
-      {/* PENDING STATE: Request Sent, Waiting for Shopkeeper Accept */}
+      {/* PENDING STATE: Customer waiting for Shopkeeper to Accept */}
       {status === 'pending' && (
-        <div className="bg-white rounded-3xl p-6 border border-[#c0c1ff] shadow-sm mb-4 space-y-5 animate-in fade-in duration-200">
+        <div className="bg-white rounded-3xl p-6 border border-[#ece8e1] shadow-xs mb-4 space-y-5 animate-in fade-in duration-200">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#e1e0ff] text-[#3d3bf3] flex items-center justify-center shrink-0 shadow-inner">
-              <span className="material-symbols-outlined text-[26px] animate-spin">sync</span>
+            <div className="w-12 h-12 rounded-2xl bg-[#e1e0ff] text-[#3d3bf3] flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[24px] animate-spin">sync</span>
             </div>
-            <div className="flex-1">
-              <span className="font-sans text-[11px] text-[#3d3bf3] font-semibold uppercase tracking-wide block">
-                Awaiting Shopkeeper
-              </span>
-              <h4 className="font-heading font-semibold text-[16px] text-[#1b1c1a] mt-0.5">
-                Print Request Sent
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                <span className="font-sans text-[11px] text-amber-700 font-semibold uppercase tracking-wide">
+                  Waiting for Shopkeeper
+                </span>
+              </div>
+              <h4 className="font-heading font-semibold text-[17px] text-[#1b1c1a] mt-1">
+                Print Request Sent to {operatorName}
               </h4>
-              <p className="font-sans text-[13px] text-[#6b6760] mt-1">
-                Your request was sent to <strong>{operatorName}</strong> at <strong>{shop.name}</strong>. You can send documents once accepted.
+              <p className="font-sans text-[13px] text-[#6b6760] mt-1 leading-relaxed">
+                Your request was sent to <strong>{shop.name}</strong>. The chat and document upload will pop up automatically as soon as <strong>{operatorName}</strong> accepts on the shopkeeper terminal.
               </p>
             </div>
           </div>
 
-          {/* Incoming Shopkeeper Alert Simulation Box */}
-          <div className="p-4 rounded-2xl bg-[#fff8e6] border border-[#f0deab] text-[#5c4300] space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-                <span className="font-heading font-semibold text-[13px]">
-                  Shopkeeper Request Preview ({operatorName})
+          {/* Stepper Progress Indicator */}
+          <div className="p-4 bg-[#fbf9f5] rounded-2xl border border-[#ece8e1] space-y-3 text-[12px]">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px] font-bold shrink-0">
+                ✓
+              </div>
+              <div className="flex-1">
+                <span className="font-sans font-semibold text-[#1b1c1a] block">
+                  Request Dispatched
+                </span>
+                <span className="font-sans text-[11px] text-[#6b6760]">
+                  {shop.name} • {shop.distance}
                 </span>
               </div>
-              <span className="font-sans text-[10px] bg-white px-2 py-0.5 rounded border border-[#f0deab] font-medium">
-                New Request
-              </span>
             </div>
-            <p className="font-sans text-[12px] leading-relaxed text-[#5c4300]">
-              Customer <strong>{customerName}</strong> is 120m away and requesting to print documents at your shop.
-            </p>
 
-            {/* Shopkeeper Action Buttons: Accept or Request */}
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => acceptChatRequest()}
-                className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-sans text-[13px] font-semibold flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-600/30 active:scale-95 transition-all cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                <span>Accept Request</span>
-              </button>
+            <div className="ml-3 w-0.5 h-3 bg-[#c0c1ff]"></div>
 
-              <button
-                type="button"
-                onClick={() => declineChatRequest()}
-                className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-[#ffebee] text-[#ba1a1a] font-sans text-[13px] font-semibold border border-[#ffcdd2] flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">cancel</span>
-                <span>Decline Request</span>
-              </button>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-[11px] font-bold shrink-0 animate-pulse">
+                •
+              </div>
+              <div className="flex-1">
+                <span className="font-sans font-semibold text-[#1b1c1a] block">
+                  Shopkeeper Acceptance
+                </span>
+                <span className="font-sans text-[11px] text-amber-700 font-medium">
+                  Waiting for {operatorName} to accept on the shopkeeper terminal...
+                </span>
+              </div>
             </div>
+
+            <div className="ml-3 w-0.5 h-3 bg-[#ece8e1]"></div>
+
+            <div className="flex items-center gap-3 opacity-60">
+              <div className="w-6 h-6 rounded-full bg-[#efeeea] text-[#767588] flex items-center justify-center text-[11px] font-bold shrink-0">
+                3
+              </div>
+              <div className="flex-1">
+                <span className="font-sans font-semibold text-[#1b1c1a] block">
+                  Chat &amp; Document Send
+                </span>
+                <span className="font-sans text-[11px] text-[#8a8780]">
+                  Attach file, set copies &amp; receive pickup PIN
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Row for Customer */}
+          <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                declineChatRequest();
+                setCurrentScreen('home');
+                triggerToast('Print request cancelled.');
+              }}
+              className="px-4 py-2.5 rounded-xl bg-white hover:bg-[#ffebee] text-[#ba1a1a] font-sans text-[12px] font-medium border border-[#ffcdd2] transition-all cursor-pointer text-center"
+            >
+              Cancel Request
+            </button>
+
+            {/* Switch Helper to view shopkeeper screen */}
+            <button
+              type="button"
+              onClick={() => setCurrentScreen('shopkeeper_dashboard')}
+              className="px-4 py-2.5 rounded-xl bg-[#07006c] hover:bg-[#12009e] text-white font-sans text-[12px] font-medium transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-xs"
+            >
+              <span className="material-symbols-outlined text-[16px]">storefront</span>
+              <span>Open Shopkeeper Portal to Accept</span>
+            </button>
           </div>
         </div>
       )}

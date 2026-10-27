@@ -17,7 +17,8 @@ export const Header: React.FC<HeaderProps> = ({
   showBack = false,
   onBack,
 }) => {
-  const { currentScreen, setCurrentScreen, currentUser } = usePrintVault();
+  const { currentScreen, setCurrentScreen, currentUser, activeChatSession } = usePrintVault();
+  const hasPendingRequest = activeChatSession?.status === 'pending';
 
   const handleBack = () => {
     if (onBack) {
@@ -72,13 +73,16 @@ export const Header: React.FC<HeaderProps> = ({
                 if (currentScreen === 'shopkeeper_auth' || currentScreen === 'shopkeeper_dashboard') {
                   setCurrentScreen('home');
                 } else {
-                  setCurrentScreen('shopkeeper_auth');
+                  setCurrentScreen('shopkeeper_dashboard');
                 }
               }}
               type="button"
-              className="px-2.5 py-1 rounded-full bg-[#f5f3ef] hover:bg-[#efeeea] border border-[#ece8e1] text-[#07006c] font-sans text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer"
+              className="relative px-2.5 py-1 rounded-full bg-[#f5f3ef] hover:bg-[#efeeea] border border-[#ece8e1] text-[#07006c] font-sans text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer"
               title="Switch to Xerox Shopkeeper Terminal"
             >
+              {hasPendingRequest && (
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+              )}
               <span className="material-symbols-outlined text-[15px]">
                 {currentScreen === 'shopkeeper_auth' || currentScreen === 'shopkeeper_dashboard'
                   ? 'person'
@@ -89,6 +93,9 @@ export const Header: React.FC<HeaderProps> = ({
                   ? 'Customer'
                   : 'Shopkeeper'}
               </span>
+              {hasPendingRequest && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              )}
             </button>
 
             {currentUser ? (

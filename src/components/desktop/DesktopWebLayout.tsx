@@ -23,10 +23,13 @@ export const DesktopWebLayout: React.FC = () => {
     currentUser,
   } = usePrintVault();
 
+  const hasPendingRequest = activeChatSession?.status === 'pending';
+  const hasAcceptedChat = activeChatSession?.status === 'accepted';
+
   const navLinks = [
     { id: 'home', label: 'Nearby Shops', icon: 'near_me' },
-    { id: 'chat', label: 'Chat', icon: 'chat', badge: activeChatSession ? '1' : undefined },
-    { id: 'shopkeeper_dashboard', label: 'Shopkeeper Portal', icon: 'storefront' },
+    { id: 'chat', label: 'Chat', icon: 'chat', badge: hasAcceptedChat ? 'Active' : undefined },
+    { id: 'shopkeeper_dashboard', label: 'Shopkeeper Portal', icon: 'storefront', badge: hasPendingRequest ? '1 New' : undefined },
   ];
 
   return (
@@ -93,8 +96,11 @@ export const DesktopWebLayout: React.FC = () => {
                 }
               }}
               type="button"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f5f3ef] hover:bg-[#ece8e1] text-[#1b1c1a] font-sans text-[12px] font-medium border border-[#ece8e1] transition-all cursor-pointer"
+              className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f5f3ef] hover:bg-[#ece8e1] text-[#1b1c1a] font-sans text-[12px] font-medium border border-[#ece8e1] transition-all cursor-pointer"
             >
+              {hasPendingRequest && (
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+              )}
               <span className="material-symbols-outlined text-[16px] text-[#3d3bf3]">
                 {currentScreen === 'shopkeeper_dashboard' || currentScreen === 'shopkeeper_auth'
                   ? 'person'
@@ -105,6 +111,11 @@ export const DesktopWebLayout: React.FC = () => {
                   ? 'Customer View'
                   : 'Shopkeeper'}
               </span>
+              {hasPendingRequest && (
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                  1
+                </span>
+              )}
             </button>
 
             {currentUser ? (
