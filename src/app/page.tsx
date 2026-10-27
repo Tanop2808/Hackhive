@@ -14,6 +14,7 @@ import { VerificationReceiptScreen } from '@/components/screens/VerificationRece
 import { ReceiptsListScreen } from '@/components/screens/ReceiptsListScreen';
 import { ProfileScreen } from '@/components/screens/ProfileScreen';
 import { AuthScreen } from '@/components/screens/AuthScreen';
+import { ChatScreen } from '@/components/screens/ChatScreen';
 import { DesktopWebLayout } from '@/components/desktop/DesktopWebLayout';
 
 function MobileAppFrame() {
@@ -69,6 +70,13 @@ function MobileAppFrame() {
           showBack: true,
           onBack: () => setCurrentScreen('home'),
         };
+      case 'chat':
+        return {
+          title: 'PrintVault',
+          subtitle: 'Xerox Secure Chat',
+          showBack: true,
+          onBack: () => setCurrentScreen('home'),
+        };
       default:
         return { title: 'PrintVault', showBack: false };
     }
@@ -80,6 +88,8 @@ function MobileAppFrame() {
         return <HomeScreen />;
       case 'auth':
         return <AuthScreen />;
+      case 'chat':
+        return <ChatScreen />;
       case 'new_job':
         return <NewPrintJobScreen />;
       case 'shop_qr':

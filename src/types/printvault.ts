@@ -6,7 +6,8 @@ export type ScreenType =
   | 'receipt'
   | 'receipts_list'
   | 'profile'
-  | 'auth';
+  | 'auth'
+  | 'chat';
 
 export type ViewMode = 'auto' | 'mobile' | 'desktop';
 
@@ -39,6 +40,57 @@ export interface PrintShop {
   jobsCount: string;
   statusBadge: string;
   image: string;
+  lat: number;
+  lng: number;
+  operatorName?: string;
+  pricePerBw?: number;
+  pricePerColor?: number;
+  printerModel?: string;
+  phone?: string;
+  isOnline?: boolean;
+}
+
+export interface UserLocation {
+  latitude: number;
+  longitude: number;
+  address: string;
+  accuracyMeters?: number;
+}
+
+export type ChatRequestStatus = 'pending' | 'accepted' | 'declined';
+
+export interface ChatDocumentAttachment {
+  fileName: string;
+  fileSize: string;
+  pageCount: number;
+  copies: number;
+  colorMode: ColorMode;
+  isMaskedAadhaar: boolean;
+  token: string;
+  jobId: string;
+  totalPrice: number;
+  note?: string;
+  sentAt: string;
+  expiresInSeconds: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  requestId: string;
+  senderRole: 'customer' | 'shopkeeper' | 'system';
+  senderName: string;
+  text?: string;
+  document?: ChatDocumentAttachment;
+  timestamp: string;
+}
+
+export interface ChatSession {
+  requestId: string;
+  customer: Customer;
+  shop: PrintShop;
+  status: ChatRequestStatus;
+  messages: ChatMessage[];
+  createdAt: string;
 }
 
 export interface PrintJob {
@@ -69,3 +121,4 @@ export interface RecentPrintItem {
   colorMode: ColorMode;
   receiptId?: string;
 }
+

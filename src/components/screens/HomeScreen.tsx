@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { usePrintVault } from '@/context/PrintVaultContext';
+import { NearbyXeroxMap } from '@/components/common/NearbyXeroxMap';
+import { mockShops } from '@/data/mockData';
 
 export const HomeScreen: React.FC = () => {
   const {
@@ -12,27 +14,37 @@ export const HomeScreen: React.FC = () => {
     countdown,
     formatCountdown,
     currentUser,
+    userLocation,
+    isFetchingLocation,
+    fetchUserLocation,
+    initiateChatWithShop,
   } = usePrintVault();
 
-  const customerFirstName = currentUser?.name ? currentUser.name.split(' ')[0] : 'Customer';
+  const customerName = currentUser?.name || 'Tanishq Mudaliyar';
+  const customerFirstName = customerName.split(' ')[0];
 
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col w-full pb-8">
       {/* Greeting Banner */}
-      <div className="pt-2 pb-5 flex flex-col gap-1">
-        <h1 className="font-heading font-bold text-[28px] text-[#1b1c1a] tracking-tight leading-tight">
-          Good morning, {customerFirstName}
-        </h1>
-        <p className="font-sans text-[14px] text-[#454556]">
-          Ready to print ephemeral documents securely
+      <div className="pt-2 pb-4 flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <h1 className="font-heading font-bold text-[26px] text-[#1b1c1a] tracking-tight leading-tight">
+            Good morning, {customerFirstName}
+          </h1>
+          <span className="font-mono text-[10px] bg-[#e1e0ff] text-[#07006c] px-2.5 py-1 rounded-full font-semibold">
+            {currentUser?.vaultTier || 'Hardware Enclave'}
+          </span>
+        </div>
+        <p className="font-sans text-[13px] text-[#454556]">
+          Zero-store document printing and live Xerox operator network
         </p>
       </div>
 
-      {/* Active Print Job Card (Hero) */}
-      {activeJob ? (
+      {/* ACTIVE PRINT JOB BANNER (If one is printing or active) */}
+      {activeJob && (
         <section className="w-full relative overflow-hidden rounded-[24px] bg-[#e1e0ff] p-5 shadow-sm text-[#07006c] mb-6 border border-[#c0c1ff]/60 transition-all hover:shadow-md">
           {/* Header pill status */}
-          <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center justify-between gap-2 mb-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 text-[#3d3bf3] shadow-xs">
               <span className="w-2 h-2 rounded-full bg-[#3d3bf3] animate-pulse"></span>
               <span className="font-mono text-[11px] font-semibold tracking-wide">
@@ -50,174 +62,272 @@ export const HomeScreen: React.FC = () => {
           </div>
 
           {/* Document File details */}
-          <div className="flex items-start gap-3.5 mb-5">
+          <div className="flex items-start gap-3.5 mb-4">
             <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center text-[#3d3bf3] shadow-xs shrink-0">
               <span className="material-symbols-outlined text-[24px]">description</span>
             </div>
             <div className="flex flex-col min-w-0 pr-1">
-              <span className="font-heading font-semibold text-[17px] text-[#07006c] truncate">
+              <span className="font-heading font-semibold text-[16px] text-[#07006c] truncate">
                 {activeJob.fileName}
               </span>
               <div className="flex items-center gap-1.5 text-[#454556] mt-0.5">
                 <span className="material-symbols-outlined text-[15px] shrink-0 text-[#3d3bf3]">
                   storefront
                 </span>
-                <span className="font-sans text-[13px] truncate">
+                <span className="font-sans text-[12px] truncate">
                   {activeJob.shop.name}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Token & Self-destruct specs container */}
-          <div className="bg-white/75 backdrop-blur-xs rounded-2xl p-3.5 mb-4 flex items-center justify-between border border-white/50">
+          {/* Token & Pin Container */}
+          <div className="bg-white/75 backdrop-blur-xs rounded-2xl p-3 mb-3 flex items-center justify-between border border-white/50">
             <div className="flex flex-col">
-              <span className="font-sans text-[11px] text-[#454556] uppercase tracking-wider font-medium">
-                One-Time Token
+              <span className="font-sans text-[10px] text-[#454556] uppercase tracking-wider font-medium">
+                Ephemeral Token
               </span>
-              <span className="font-mono text-[19px] text-[#3d3bf3] tracking-widest font-bold">
+              <span className="font-mono text-[18px] text-[#3d3bf3] tracking-wider font-bold">
                 {activeJob.token}
               </span>
             </div>
-            <div className="h-8 w-px bg-[#c6c4d9]/50"></div>
-            <div className="flex flex-col items-end">
-              <span className="font-sans text-[11px] text-[#454556] uppercase tracking-wider font-medium">
-                Self-Destruct
-              </span>
-              <span className="font-mono text-[12px] text-[#1b1c1a] font-semibold flex items-center gap-1 mt-0.5">
-                <span className="material-symbols-outlined text-[14px] text-[#3d3bf3]">
-                  lock_clock
-                </span>
-                Post-render shred
-              </span>
-            </div>
-          </div>
-
-          {/* Bottom Card Controls */}
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-1.5 text-[#454556]">
-              <span className="material-symbols-outlined text-[16px] text-emerald-700">
-                verified_user
-              </span>
-              <span className="font-sans text-[12px] font-medium">Zero-store vault</span>
-            </div>
+            <div className="h-7 w-px bg-[#c6c4d9]/50"></div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentScreen('shop_qr')}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/70 text-[#1b1c1a] font-sans text-[13px] font-medium shadow-xs hover:bg-white active:scale-95 transition-all"
+                className="px-3 py-1.5 rounded-xl bg-white text-[#1b1c1a] font-sans text-[12px] font-medium shadow-xs hover:bg-[#fbf9f5] cursor-pointer"
                 type="button"
-                title="View QR Code"
               >
-                <span className="material-symbols-outlined text-[16px]">qr_code_2</span>
-                <span>QR</span>
+                QR Code
               </button>
               <button
                 onClick={() => setCurrentScreen('live_tracker')}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white text-[#1b1c1a] font-sans text-[13px] font-semibold shadow-xs hover:bg-[#fbf9f5] active:scale-95 transition-all"
+                className="px-3 py-1.5 rounded-xl bg-[#3d3bf3] text-white font-sans text-[12px] font-semibold shadow-xs hover:bg-[#2e2cd4] cursor-pointer"
                 type="button"
               >
-                <span>Track live</span>
-                <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                Tracker
               </button>
             </div>
           </div>
         </section>
-      ) : (
-        <section className="w-full rounded-[24px] bg-white p-6 shadow-sm border border-[#ece8e1] mb-6 text-center">
-          <div className="w-12 h-12 rounded-full bg-[#f5f3ef] text-[#3d3bf3] flex items-center justify-center mx-auto mb-3">
-            <span className="material-symbols-outlined text-[24px]">verified</span>
+      )}
+
+      {/* STEP 1: FETCH LOCATION & MAP SECTION */}
+      {!userLocation ? (
+        /* Prompt to Fetch Location */
+        <section className="w-full rounded-[28px] bg-gradient-to-br from-white to-[#f5f3ef] p-6 shadow-sm border border-[#ece8e1] mb-6 text-center space-y-4">
+          <div className="w-16 h-16 rounded-3xl bg-[#e1e0ff] text-[#3d3bf3] flex items-center justify-center mx-auto shadow-md shadow-[#3d3bf3]/15">
+            <span className="material-symbols-outlined text-[32px] animate-pulse">
+              location_searching
+            </span>
           </div>
-          <h3 className="font-heading font-semibold text-[17px] text-[#1b1c1a]">
-            Vault is Idle & Purged
-          </h3>
-          <p className="font-sans text-[13px] text-[#454556] mt-1 max-w-[280px] mx-auto">
-            All previous ephemeral jobs have been safely erased. Ready to prepare your next secure print job.
+
+          <div className="max-w-[320px] mx-auto space-y-1">
+            <span className="font-mono text-[11px] text-[#3d3bf3] font-bold uppercase tracking-wider">
+              Step 1: Nearby Xerox Scanner
+            </span>
+            <h3 className="font-heading font-bold text-[19px] text-[#1b1c1a]">
+              Find Nearby Xerox Stores
+            </h3>
+            <p className="font-sans text-[13px] text-[#454556] leading-relaxed">
+              Detect your current GPS location to discover certified Xerox hubs within 1 km, inspect live queues, and start a direct print chat.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={fetchUserLocation}
+            disabled={isFetchingLocation}
+            className="w-full h-[52px] rounded-full bg-[#3d3bf3] hover:bg-[#2e2cd4] text-white font-sans text-[15px] font-semibold flex items-center justify-center gap-2 shadow-md shadow-[#3d3bf3]/25 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-75"
+          >
+            {isFetchingLocation ? (
+              <>
+                <span className="material-symbols-outlined text-[20px] animate-spin">sync</span>
+                <span>Acquiring GPS Coordinates...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[20px]">near_me</span>
+                <span>Fetch My Location</span>
+              </>
+            )}
+          </button>
+
+          <p className="font-sans text-[11px] text-[#767588]">
+            🔒 Location is processed on-device. No GPS tracking stored.
           </p>
+        </section>
+      ) : (
+        /* Once Location is Fetched: Show Interactive Map */
+        <section className="w-full mb-6 space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <div>
+              <h2 className="font-heading font-bold text-[18px] text-[#1b1c1a] tracking-tight">
+                Nearby Xerox Radar
+              </h2>
+              <p className="font-sans text-[12px] text-[#454556]">
+                Interactive map of current location &amp; verified Xerox operators
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={fetchUserLocation}
+              disabled={isFetchingLocation}
+              className="px-3 py-1.5 rounded-full bg-white hover:bg-[#f5f3ef] border border-[#ece8e1] text-[#3d3bf3] font-sans text-[11px] font-semibold flex items-center gap-1 shadow-2xs cursor-pointer disabled:opacity-50"
+            >
+              <span className={`material-symbols-outlined text-[14px] ${isFetchingLocation ? 'animate-spin' : ''}`}>
+                sync
+              </span>
+              <span>Refresh</span>
+            </button>
+          </div>
+
+          {/* Interactive Map Component */}
+          <NearbyXeroxMap />
         </section>
       )}
 
-      {/* Main CTA: New Secure Print */}
-      <div className="w-full mb-8">
-        <button
-          onClick={() => setCurrentScreen('new_job')}
-          className="w-full h-[52px] rounded-full bg-[#3d3bf3] text-white font-sans text-[16px] font-semibold flex items-center justify-center gap-2 shadow-md shadow-[#3d3bf3]/25 hover:bg-[#2e2cd4] active:scale-[0.98] transition-all"
-          type="button"
-        >
-          <span className="material-symbols-outlined text-[22px]">add</span>
-          <span>New secure print</span>
-        </button>
-      </div>
-
-      {/* Recent Prints Section */}
-      <section className="w-full flex flex-col gap-3">
-        <div className="flex items-center justify-between px-0.5">
-          <h2 className="font-heading font-semibold text-[18px] text-[#1b1c1a] tracking-tight">
-            Recent prints
+      {/* STEP 2: ALL NEARBY XEROX STORES LIST */}
+      <section className="w-full mb-6 space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="font-heading font-bold text-[18px] text-[#1b1c1a] tracking-tight">
+            Certified Xerox Hubs ({mockShops.length})
           </h2>
-          <span className="font-sans text-[12px] text-[#454556]">
-            Archived receipts
+          <span className="font-mono text-[11px] text-[#3d3bf3] font-semibold bg-[#e1e0ff] px-2.5 py-0.5 rounded-full">
+            Within 1km
           </span>
         </div>
 
-        <div className="flex flex-col gap-3">
-          {recentPrints.map((item) => (
+        <div className="space-y-3">
+          {mockShops.map((shop) => (
             <div
-              key={item.id}
-              onClick={() => viewReceipt(item)}
-              role="button"
-              tabIndex={0}
-              className="w-full p-4 rounded-[20px] bg-white shadow-sm border border-[#ece8e1] flex items-center justify-between gap-3 transition-all hover:border-[#3d3bf3]/40 hover:shadow active:scale-[0.99] cursor-pointer"
+              key={shop.id}
+              className="p-4 rounded-3xl bg-white border border-[#ece8e1] shadow-xs hover:border-[#3d3bf3]/40 hover:shadow-sm transition-all"
             >
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                    item.status === 'Done'
-                      ? 'bg-[#ddf5e6] text-[#174e2b]'
-                      : 'bg-[#f5f3ef] text-[#454556]'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[20px]">
-                    {item.status === 'Done' ? 'task_alt' : 'lock'}
-                  </span>
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="font-sans text-[14px] font-semibold text-[#1b1c1a] truncate">
-                    {item.fileName}
-                  </span>
-                  <span className="font-sans text-[12px] text-[#454556] truncate">
-                    {item.shopName} · {item.timestamp}
-                  </span>
-                </div>
-              </div>
+              <div className="flex items-start gap-3.5">
+                <img
+                  src={shop.image}
+                  alt={shop.name}
+                  className="w-14 h-14 rounded-2xl object-cover shrink-0 border border-[#ece8e1]"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1">
+                    <h3 className="font-heading font-bold text-[14px] text-[#1b1c1a] truncate">
+                      {shop.name}
+                    </h3>
+                    <span className="font-mono text-[11px] font-bold text-[#1e0cde] bg-[#e1e0ff] px-2 py-0.5 rounded-md shrink-0">
+                      {shop.distance}
+                    </span>
+                  </div>
 
-              <div className="shrink-0 flex items-center gap-1.5">
-                <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full font-mono text-[11px] font-semibold ${
-                    item.status === 'Done'
-                      ? 'bg-[#ddf5e6] text-[#174e2b]'
-                      : 'bg-[#e1dee8] text-[#63626a]'
-                  }`}
-                >
-                  {item.status}
-                </span>
-                <span className="material-symbols-outlined text-[16px] text-[#767588]">
-                  chevron_right
-                </span>
+                  <p className="font-sans text-[12px] text-[#454556] truncate mt-0.5">
+                    Operator: <strong className="text-[#1b1c1a]">{shop.operatorName || 'Mohan Kumar'}</strong> • {shop.location}
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <span className="inline-flex items-center gap-0.5 bg-[#fbf9f5] px-2 py-0.5 rounded-md text-[11px] font-bold text-[#1b1c1a] border border-[#ece8e1]">
+                      <span className="material-symbols-outlined text-[#e5a000] text-[13px]">
+                        star
+                      </span>
+                      {shop.rating}
+                    </span>
+
+                    <span className="font-mono text-[11px] text-[#0a542a] bg-[#ddf5e6] px-2 py-0.5 rounded-md font-semibold">
+                      ₹{shop.pricePerBw || 2}/pg B&amp;W
+                    </span>
+
+                    <span className="font-sans text-[11px] text-[#454556] bg-[#f5f3ef] px-2 py-0.5 rounded-md">
+                      {shop.statusBadge}
+                    </span>
+                  </div>
+
+                  {/* Connect & Chat CTA Button */}
+                  <div className="mt-3 pt-3 border-t border-[#ece8e1]/70 flex items-center justify-between">
+                    <span className="font-mono text-[10px] text-[#767588]">
+                      {shop.printerModel?.split(' ')[0] || 'Canon'} High-Speed Spooler
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => initiateChatWithShop(shop)}
+                      className="px-4 py-2 rounded-xl bg-[#3d3bf3] hover:bg-[#2e2cd4] text-white font-sans text-[12px] font-semibold flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">chat</span>
+                      <span>Connect &amp; Chat</span>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Ephemeral Trust Footnote */}
-      <div className="mt-8 mb-4 flex items-center justify-center gap-2 text-[#454556]/80">
-        <span className="material-symbols-outlined text-[16px] text-emerald-600">
-          verified
-        </span>
-        <span className="font-mono text-[11px] text-center">
-          End-to-end encrypted · Auto memory wipe
-        </span>
+      {/* QUICK PIPELINE SHORTCUT */}
+      <div className="w-full mb-6">
+        <button
+          onClick={() => setCurrentScreen('new_job')}
+          className="w-full h-[50px] rounded-2xl bg-[#f5f3ef] hover:bg-[#efeeea] text-[#1b1c1a] font-sans text-[14px] font-semibold flex items-center justify-center gap-2 border border-[#ece8e1] transition-all cursor-pointer"
+          type="button"
+        >
+          <span className="material-symbols-outlined text-[20px] text-[#3d3bf3]">add_circle</span>
+          <span>Or Create Offline Print Token Pipeline</span>
+        </button>
       </div>
+
+      {/* Recent Purge Receipts */}
+      <section className="w-full flex flex-col gap-3">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="font-heading font-bold text-[18px] text-[#1b1c1a] tracking-tight">
+            Recent Purge Receipts
+          </h2>
+          <button
+            type="button"
+            onClick={() => setCurrentScreen('receipts_list')}
+            className="font-sans text-[12px] text-[#3d3bf3] hover:underline font-semibold"
+          >
+            View all ({recentPrints.length})
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2.5">
+          {recentPrints.slice(0, 3).map((item) => (
+            <div
+              key={item.id}
+              onClick={() => viewReceipt(item)}
+              role="button"
+              tabIndex={0}
+              className="w-full p-3.5 rounded-2xl bg-white shadow-xs border border-[#ece8e1] flex items-center justify-between gap-3 transition-all hover:border-[#3d3bf3]/40 cursor-pointer"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    item.status === 'Done'
+                      ? 'bg-[#ddf5e6] text-[#0a542a]'
+                      : 'bg-[#f5f3ef] text-[#454556]'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {item.status === 'Done' ? 'verified' : 'lock'}
+                  </span>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="font-sans text-[13px] font-semibold text-[#1b1c1a] truncate">
+                    {item.fileName}
+                  </span>
+                  <span className="font-sans text-[11px] text-[#454556] truncate">
+                    {item.shopName} · {item.timestamp}
+                  </span>
+                </div>
+              </div>
+
+              <span className="font-mono text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#ddf5e6] text-[#0a542a] shrink-0">
+                {item.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 };

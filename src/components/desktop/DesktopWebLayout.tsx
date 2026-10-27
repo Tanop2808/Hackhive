@@ -11,6 +11,7 @@ import { VerificationReceiptScreen } from '@/components/screens/VerificationRece
 import { ReceiptsListScreen } from '@/components/screens/ReceiptsListScreen';
 import { ProfileScreen } from '@/components/screens/ProfileScreen';
 import { AuthScreen } from '@/components/screens/AuthScreen';
+import { ChatScreen } from '@/components/screens/ChatScreen';
 
 export const DesktopWebLayout: React.FC = () => {
   const {
@@ -23,6 +24,7 @@ export const DesktopWebLayout: React.FC = () => {
     formatCountdown,
     triggerToast,
     currentUser,
+    initiateChatWithShop,
   } = usePrintVault();
 
   const navLinks = [
@@ -329,6 +331,7 @@ export const DesktopWebLayout: React.FC = () => {
             {/* Screen switcher */}
             {currentScreen === 'home' && <HomeScreen />}
             {currentScreen === 'auth' && <AuthScreen />}
+            {currentScreen === 'chat' && <ChatScreen />}
             {currentScreen === 'new_job' && <NewPrintJobScreen />}
             {currentScreen === 'shop_qr' && <ShopLinkQrScreen />}
             {currentScreen === 'live_tracker' && <LiveTrackerScreen />}
@@ -355,9 +358,7 @@ export const DesktopWebLayout: React.FC = () => {
               {mockShops.map((shop) => (
                 <div
                   key={shop.id}
-                  onClick={() => {
-                    triggerToast(`Selected ${shop.name}`);
-                  }}
+                  onClick={() => initiateChatWithShop(shop)}
                   className="p-3 rounded-2xl bg-[#f5f3ef]/80 hover:bg-[#efeeea] border border-[#ece8e1] transition-all cursor-pointer group"
                 >
                   <div className="flex items-start gap-3">

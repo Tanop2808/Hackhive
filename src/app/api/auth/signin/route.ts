@@ -51,17 +51,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Default demo fallback account (Rohan Sharma)
-    if (cleanEmail === 'rohan.sharma@domain.in' && password === 'vault123') {
+    // Default demo fallback account (Tanishq Mudaliyar & Rohan Sharma)
+    if (
+      (cleanEmail === 'tanishq.mudaliyar@domain.in' || cleanEmail === 'rohan.sharma@domain.in') &&
+      password === 'vault123'
+    ) {
+      const isTanishq = cleanEmail.includes('tanishq');
       return NextResponse.json({
         success: true,
         source: 'demo_account',
         message: 'Signed in successfully (Demo Vault Enclave).',
         customer: {
-          id: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
-          name: 'Rohan Sharma',
-          age: 24,
-          email: 'rohan.sharma@domain.in',
+          id: isTanishq ? 'c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f' : 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
+          name: isTanishq ? 'Tanishq Mudaliyar' : 'Rohan Sharma',
+          age: 23,
+          email: cleanEmail,
           avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
           vaultTier: 'Hardware Enclave Tier 4',
         },

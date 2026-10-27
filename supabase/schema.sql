@@ -231,15 +231,77 @@ on public.customers for insert with check (true);
 create policy "Allow public update customers"
 on public.customers for update using (true);
 
--- Seed initial customer (Rohan Sharma)
+-- Seed initial customers (Tanishq Mudaliyar & Rohan Sharma)
 insert into public.customers (id, name, age, email, password_hash, vault_tier)
-values (
+values 
+  (
+    'c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f',
+    'Tanishq Mudaliyar',
+    23,
+    'tanishq.mudaliyar@domain.in',
+    'vault123',
+    'Hardware Enclave Tier 4'
+  ),
+  (
     'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
     'Rohan Sharma',
     24,
     'rohan.sharma@domain.in',
     'vault123',
     'Hardware Enclave Tier 4'
-)
+  )
 on conflict (email) do nothing;
+
+-- ------------------------------------------------------------------------------
+-- 7. Chat Requests Table (Customer to Xerox Store Connection Requests)
+-- ------------------------------------------------------------------------------
+create table if not exists public.chat_requests (
+    id text primary key default ('req-' || substr(uuid_generate_v4()::text, 1, 8)),
+    customer_id text not null,
+    customer_name text not null,
+    shop_id text not null,
+    shop_name text not null,
+    operator_name text default 'Mohan Kumar',
+    status text not null check (status in ('pending', 'accepted', 'declined', 'completed')) default 'pending',
+    created_at timestamptz default timezone('utc'::text, now()) not null,
+    updated_at timestamptz default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_chat_requests_status on public.chat_requests(status);
+create index if not exists idx_chat_requests_shop on public.chat_requests(shop_id);
+
+alter table public.chat_requests enable row level security;
+
+create policy "Allow public read chat requests"
+on public.chat_requests for select using (true);
+
+create policy "Allow public insert chat requests"
+on public.chat_requests for insert with check (true);
+
+create policy "Allow public update chat requests"
+on public.chat_requests for update using (true);
+
+-- ------------------------------------------------------------------------------
+-- 8. Chat Messages & Ephemeral Spool Attachments Table
+-- ------------------------------------------------------------------------------
+create table if not exists public.chat_messages (
+    id text primary key default ('msg-' || substr(uuid_generate_v4()::text, 1, 8)),
+    request_id text not null references public.chat_requests(id) on delete cascade,
+    sender_role text not null check (sender_role in ('customer', 'shopkeeper', 'system')),
+    sender_name text not null,
+    message text,
+    document jsonb default null,
+    created_at timestamptz default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_chat_messages_request on public.chat_messages(request_id);
+
+alter table public.chat_messages enable row level security;
+
+create policy "Allow public read chat messages"
+on public.chat_messages for select using (true);
+
+create policy "Allow public insert chat messages"
+on public.chat_messages for insert with check (true);
+
 

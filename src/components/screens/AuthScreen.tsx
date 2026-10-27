@@ -49,7 +49,7 @@ export const AuthScreen: React.FC = () => {
   };
 
   const autofillDemo = () => {
-    setEmail('rohan.sharma@domain.in');
+    setEmail('tanishq.mudaliyar@domain.in');
     setPassword('vault123');
     setErrorMessage(null);
   };
@@ -245,7 +245,7 @@ export const AuthScreen: React.FC = () => {
               className="text-[#3d3bf3] font-sans text-[12px] font-medium hover:underline inline-flex items-center gap-1 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[15px]">bolt</span>
-              <span>Autofill demo account (Rohan Sharma)</span>
+              <span>Autofill demo account (Tanishq Mudaliyar)</span>
             </button>
           </div>
         )}
